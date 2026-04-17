@@ -1767,6 +1767,82 @@ input {
     max-height: 42vh;
   }
 
+  .pending-row-card {
+    padding: 0 12px 14px;
+  }
+
+  .pending-meta-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .meta-item {
+    padding: 10px;
+  }
+
+  .pending-books-block {
+    margin-bottom: 10px;
+  }
+
+  .pending-original-books {
+    gap: 4px;
+    font-size: 11px;
+  }
+
+  .radio-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .note-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .note-input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .confirm-action-row {
+    justify-content: stretch;
+  }
+
+  .confirm-action-row .btn {
+    width: 100%;
+  }
+
+  .table-wrap {
+    padding: 0 12px 12px;
+  }
+
+  .sched-table {
+    font-size: 12px;
+  }
+
+  .sched-table th {
+    padding: 7px 8px;
+    font-size: 10px;
+  }
+
+  .sched-table td {
+    padding: 7px 8px;
+  }
+
+  .status-badge {
+    min-height: 20px;
+    padding: 0 6px;
+    font-size: 10px;
+  }
+
+  .book-tag {
+    padding: 1px 5px;
+    font-size: 10px;
+    margin: 1px 2px 1px 0;
+  }
+
   .detail-header {
     flex-direction: column;
     align-items: flex-start;
