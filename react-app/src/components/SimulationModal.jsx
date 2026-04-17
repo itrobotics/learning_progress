@@ -221,11 +221,14 @@ function SimulationModal({
     setSaving(true)
     setSaveMsg('⏳ 儲存中…')
     const result = await onSaveSimulation(student.id, form, simResult.rows)
-    setSaveMsg(
-      result?.ok
-        ? '✅ 已套用設定並儲存為新的學習進度表'
-        : `⚠ ${result?.message || '儲存失敗'}`
-    )
+    if (result?.ok) {
+      setSaveMsg('✅ 已套用設定並儲存為新的學習進度表')
+      setSaving(false)
+      onClose?.()
+      return
+    }
+
+    setSaveMsg(`⚠ ${result?.message || '儲存失敗'}`)
     setSaving(false)
   }
 

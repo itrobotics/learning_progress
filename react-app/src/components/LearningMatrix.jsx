@@ -136,8 +136,8 @@ function LearningMatrix({
         <div>
           <div className="section-title">🧭 書號學習矩陣</div>
           <div className="section-sub">
-            綠底 X＝整本已完成　◐＝半本已完成　○＝已排入學習進度但尚未確認　黃底 ○＝有庫存　紅底 ○＝無庫存
-            　顯示範圍：{term.label}（{term.start} ～ {term.end}）
+            綠底 X＝整本已完成 ◐＝半本已完成 ○＝已排入學習進度但尚未確認 黃底 ○＝有庫存
+            紅底 ○＝無庫存 顯示範圍：{term.label}（{term.start} ～ {term.end}）
           </div>
         </div>
       </div>
@@ -239,30 +239,31 @@ function LearningMatrix({
                   const state = getBookOrderState(bookOrderStateMap, student.id, book)
                   const cls =
                     state === 'inStock'
-                      ? 'cell-stock'
+                      ? 'cell-stock planned-book pending-book inStock yellow-stock'
                       : state === 'needOrder'
-                        ? 'cell-order'
-                        : 'cell-plan'
+                        ? 'cell-order planned-book pending-book needOrder'
+                        : 'cell-plan planned-book pending-book white-circle'
 
                   return (
-                      <td
-                        key={no}
-                        className={`${cls} ${boundaryClass} ${syncLocked ? 'cell-disabled' : ''}`.trim()}
-                        title={
-                          syncLocked
-                            ? `${book}：同步中，暫時不可操作`
-                            : state === 'inStock'
-                              ? `${book}：有庫存`
-                              : state === 'needOrder'
-                                ? `${book}：需訂購`
-                                : `${book}：已排入學習進度但尚未確認`
-                        }
-                        onClick={() => {
-                          if (!syncLocked) onCellClick(currentLevel, grade, no)
-                        }}
-                      >
-                        ○
-                      </td>
+                    <td
+                      key={no}
+                      className={`${cls} ${boundaryClass} ${syncLocked ? 'cell-disabled' : ''}`.trim()}
+                      title={
+                        syncLocked
+                          ? `${book}：同步中，暫時不可操作`
+                          : state === 'inStock'
+                            ? `${book}：有庫存`
+                            : state === 'needOrder'
+                              ? `${book}：需訂購`
+                              : `${book}：已排入學習進度但尚未確認`
+                      }
+                      data-book-state={state || 'planned'}
+                      onClick={() => {
+                        if (!syncLocked) onCellClick(currentLevel, grade, no)
+                      }}
+                    >
+                      ○
+                    </td>
                   )
                 })}
               </tr>

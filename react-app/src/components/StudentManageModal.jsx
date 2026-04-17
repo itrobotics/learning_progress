@@ -9,7 +9,7 @@ function buildInitialForm(student, currentBranch) {
     level: String(student?.level || 'GK').trim() || 'GK',
     grade: Number(student?.grade || 1),
     speed: Number(student?.speed || 1),
-    confirmedNo: Number(student?.confirmedNo || 1),
+    confirmedNo: Number(student?.confirmedNo ?? 1),
     currentRemainingHours: Number(
       student?.currentRemainingHours ?? student?.confirmedHours ?? 0
     ),
@@ -78,7 +78,7 @@ function StudentManageModal({
       level: String(form.level || 'GK').trim() || 'GK',
       grade: Number(form.grade || 1),
       speed: Number(form.speed || 1),
-      confirmedNo: Number(form.confirmedNo || 1),
+      confirmedNo: Number(form.confirmedNo),
       currentRemainingHours: Number(form.currentRemainingHours || 0),
       confirmedHours: Number(form.currentRemainingHours || 0),
       initHours: Number(form.initHours || 0),

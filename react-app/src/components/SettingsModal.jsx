@@ -27,7 +27,14 @@ function SettingsModal({ open, settings, onClose, onSave }) {
     setSaving(true)
     setMsg('⏳ 設定同步中…')
     const result = await onSave(form)
-    setMsg(result?.ok ? '✅ 設定已儲存' : `⚠ ${result?.message || '儲存失敗'}`)
+    if (result?.ok) {
+      setMsg('✅ 設定已儲存')
+      setSaving(false)
+      onClose?.()
+      return
+    }
+
+    setMsg(`⚠ ${result?.message || '儲存失敗'}`)
     setSaving(false)
   }
 
