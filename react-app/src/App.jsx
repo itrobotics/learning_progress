@@ -207,6 +207,7 @@ function App() {
   const [currentFilter, setCurrentFilter] = useState('all')
   const [currentSearch, setCurrentSearch] = useState('')
   const [selectedId, setSelectedId] = useState(null)
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [collapsedLevels, setCollapsedLevels] = useState({})
   const [matrixLevelState, setMatrixLevelState] = useState({})
   const [matrixScopeState, setMatrixScopeState] = useState({})
@@ -391,6 +392,10 @@ function App() {
     }
   }, [branchStudents])
 
+  const mobileStudentLabel = selectedStudent?.name
+    ? `目前學生：${selectedStudent.name}`
+    : '選擇學生'
+
   const orderFilters = useMemo(
     () => ({
       search: orderSearch,
@@ -416,6 +421,11 @@ function App() {
       ...prev,
       [level]: !prev[level],
     }))
+  }
+
+  function handleSelectStudent(id) {
+    setSelectedId(id)
+    setMobileSidebarOpen(false)
   }
 
   async function preloadBranchSchedules(branch) {
@@ -988,7 +998,7 @@ function App() {
           collapsedLevels={collapsedLevels}
           toggleLevel={toggleLevel}
           selectedId={selectedId}
-          setSelectedId={setSelectedId}
+          setSelectedId={handleSelectStudent}
           onOpenCreateStudent={handleOpenCreateStudent}
         />
 
@@ -1016,7 +1026,35 @@ function App() {
                     <div className="kpi-value warn">{kpis.warn}</div>
                   </div>
                 </div>
+              </div>
 
+              <div className="mobile-sidebar-shell">
+                <button
+                  className={`mobile-sidebar-toggle ${mobileSidebarOpen ? 'open' : ''}`}
+                  onClick={() => setMobileSidebarOpen((prev) => !prev)}
+                >
+                  <span>{mobileStudentLabel}</span>
+                  <span>{mobileSidebarOpen ? '▲' : '▼'}</span>
+                </button>
+
+                {mobileSidebarOpen && (
+                  <div className="mobile-sidebar-panel">
+                    <StudentSidebar
+                      loading={loading}
+                      errorMsg={errorMsg}
+                      currentSearch={currentSearch}
+                      setCurrentSearch={setCurrentSearch}
+                      currentFilter={currentFilter}
+                      setCurrentFilter={setCurrentFilter}
+                      filteredStudents={filteredStudents}
+                      collapsedLevels={collapsedLevels}
+                      toggleLevel={toggleLevel}
+                      selectedId={selectedId}
+                      setSelectedId={handleSelectStudent}
+                      onOpenCreateStudent={handleOpenCreateStudent}
+                    />
+                  </div>
+                )}
               </div>
 
               <StudentDetailPanel
@@ -1044,18 +1082,49 @@ function App() {
               />
             </>
           ) : (
-            <OrderSummaryView
-              currentBranch={currentBranch}
-              orderSearch={orderSearch}
-              setOrderSearch={setOrderSearch}
-              orderTimePreset={orderTimePreset}
-              setOrderTimePreset={setOrderTimePreset}
-              orderDateStart={orderDateStart}
-              setOrderDateStart={setOrderDateStart}
-              orderDateEnd={orderDateEnd}
-              setOrderDateEnd={setOrderDateEnd}
-              orderSummaryRows={orderSummaryRows}
-            />
+            <>
+              <div className="mobile-sidebar-shell">
+                <button
+                  className={`mobile-sidebar-toggle ${mobileSidebarOpen ? 'open' : ''}`}
+                  onClick={() => setMobileSidebarOpen((prev) => !prev)}
+                >
+                  <span>{mobileStudentLabel}</span>
+                  <span>{mobileSidebarOpen ? '▲' : '▼'}</span>
+                </button>
+
+                {mobileSidebarOpen && (
+                  <div className="mobile-sidebar-panel">
+                    <StudentSidebar
+                      loading={loading}
+                      errorMsg={errorMsg}
+                      currentSearch={currentSearch}
+                      setCurrentSearch={setCurrentSearch}
+                      currentFilter={currentFilter}
+                      setCurrentFilter={setCurrentFilter}
+                      filteredStudents={filteredStudents}
+                      collapsedLevels={collapsedLevels}
+                      toggleLevel={toggleLevel}
+                      selectedId={selectedId}
+                      setSelectedId={handleSelectStudent}
+                      onOpenCreateStudent={handleOpenCreateStudent}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <OrderSummaryView
+                currentBranch={currentBranch}
+                orderSearch={orderSearch}
+                setOrderSearch={setOrderSearch}
+                orderTimePreset={orderTimePreset}
+                setOrderTimePreset={setOrderTimePreset}
+                orderDateStart={orderDateStart}
+                setOrderDateStart={setOrderDateStart}
+                orderDateEnd={orderDateEnd}
+                setOrderDateEnd={setOrderDateEnd}
+                orderSummaryRows={orderSummaryRows}
+              />
+            </>
           )}
         </main>
       </div>
