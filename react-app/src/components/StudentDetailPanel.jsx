@@ -151,15 +151,16 @@ function StudentDetailPanel({
     selectedStudent.schoolName ||
     '未填'
 
-  const weeklyText =
-    ['一', '二', '三', '四', '五', '六', '日']
-      .map((day, index) =>
-        Number(selectedStudent.schedule?.[index] || 0) > 0
-          ? `週${day} ${Number(selectedStudent.schedule[index])}hr`
-          : ''
-      )
-      .filter(Boolean)
-      .join('、') || '未設定'
+  const weeklyScheduleItems = ['一', '二', '三', '四', '五', '六', '日']
+    .map((day, index) =>
+      Number(selectedStudent.schedule?.[index] || 0) > 0
+        ? {
+            key: `week-${day}`,
+            label: `週${day} ${Number(selectedStudent.schedule[index])}hr`,
+          }
+        : null
+    )
+    .filter(Boolean)
 
   const depletionTooltip =
     '按照每週排課節奏，從今天開始一天一天扣剩餘時數，扣到 0（或以下）的那一天。'
@@ -251,7 +252,19 @@ function StudentDetailPanel({
           <div className="detail-sub">
             學生編號：{selectedStudent.id} ｜ 分校：{selectedStudent.branch} ｜ 國小：{schoolName}
             <br />
-            速度：{selectedStudent.speed} 本/時 ｜ 每週時程：{weeklyText}
+            速度：{selectedStudent.speed} 本/時 ｜ 每週時程：
+            {weeklyScheduleItems.length ? (
+              <span className="weekly-schedule-list">
+                {weeklyScheduleItems.map((item, index) => (
+                  <span key={item.key} className="weekly-schedule-token">
+                    {index > 0 ? '、' : ''}
+                    {item.label}
+                  </span>
+                ))}
+              </span>
+            ) : (
+              '未設定'
+            )}
           </div>
         </div>
 

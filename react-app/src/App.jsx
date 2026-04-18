@@ -428,6 +428,13 @@ function App() {
   function handleSelectStudent(id) {
     setSelectedId(id)
     setMobileSidebarOpen(false)
+
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 700px)').matches) {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      })
+    }
   }
 
   function handleToggleMobileDrawer() {

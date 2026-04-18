@@ -11,13 +11,18 @@ function TopNav({
   onToggleMobileDrawer,
 }) {
   const logoSrc = `${import.meta.env.BASE_URL}ais-logo.png`
+  const fullTitle = '艾思-學習進度管理系統 (MPM數學專用)'
+  const mobileTitle = '艾思 MPM 進度系統'
 
   return (
     <nav className="topnav">
-      <div className="logo-wrap">
-        <img className="logo-image" src={logoSrc} alt="艾思程式教育 Logo" />
-        <div className="logo">艾思-學習進度管理系統 (MPM數學專用)</div>
-      </div>
+        <div className="logo-wrap">
+          <img className="logo-image" src={logoSrc} alt="艾思程式教育 Logo" />
+          <div className="logo">
+            <span className="logo-text-desktop">{fullTitle}</span>
+            <span className="logo-text-mobile">{mobileTitle}</span>
+          </div>
+        </div>
       <div className="topnav-right">
         <button
           className={`topnav-mobile-menu-btn ${mobileDrawerOpen ? 'open' : ''}`}

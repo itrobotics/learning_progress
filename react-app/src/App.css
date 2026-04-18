@@ -412,10 +412,20 @@ input {
 }
 
 .logo {
+  min-width: 0;
   font-size: 18px;
   font-weight: 700;
   letter-spacing: 0.5px;
   white-space: nowrap;
+}
+
+.logo-text-desktop,
+.logo-text-mobile {
+  display: block;
+}
+
+.logo-text-mobile {
+  display: none;
 }
 
 .topnav-right {
@@ -830,6 +840,14 @@ input {
   font-size: 13px;
   color: var(--gray-400);
   margin-top: 2px;
+}
+
+.weekly-schedule-list {
+  display: inline;
+}
+
+.weekly-schedule-token {
+  white-space: nowrap;
 }
 
 .info-grid {
@@ -1970,9 +1988,24 @@ input {
   }
 
   .logo {
-    font-size: 16px;
-    white-space: normal;
-    line-height: 1.3;
+    min-width: 0;
+    flex: 1;
+    font-size: 14px;
+    white-space: nowrap;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .logo-text-desktop {
+    display: none;
+  }
+
+  .logo-text-mobile {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .topnav-right {
