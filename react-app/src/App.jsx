@@ -33,22 +33,37 @@ function parsePositiveInt(v, fallback) {
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback
 }
 
-function normalizeMd(v, fallback) {
+function normalizeTermDate(v, fallback) {
   const s = String(v || '').trim()
-  const m = s.match(/^(\d{1,2})\/(\d{1,2})$/)
-  if (!m) return fallback
-  const mm = Number(m[1])
-  const dd = Number(m[2])
-  if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return fallback
-  return `${String(mm).padStart(2, '0')}/${String(dd).padStart(2, '0')}`
+  if (!s) return fallback
+
+  const full = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/)
+  if (full) {
+    const yy = Number(full[1])
+    const mm = Number(full[2])
+    const dd = Number(full[3])
+    if (yy < 2000 || yy > 2100 || mm < 1 || mm > 12 || dd < 1 || dd > 31) return fallback
+    return `${String(yy).padStart(4, '0')}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`
+  }
+
+  const old = s.match(/^(\d{1,2})\/(\d{1,2})$/)
+  if (old) {
+    const mm = Number(old[1])
+    const dd = Number(old[2])
+    if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return fallback
+    const fallbackYear = String(fallback || '').match(/^(\d{4})-/)?.[1] || String(new Date().getFullYear())
+    return `${fallbackYear}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`
+  }
+
+  return fallback
 }
 
 function applySystemSettings(raw = {}) {
   return {
-    upTermStart: normalizeMd(raw.upTermStart, APP_SETTINGS_DEFAULT.upTermStart),
-    upTermEnd: normalizeMd(raw.upTermEnd, APP_SETTINGS_DEFAULT.upTermEnd),
-    downTermStart: normalizeMd(raw.downTermStart, APP_SETTINGS_DEFAULT.downTermStart),
-    downTermEnd: normalizeMd(raw.downTermEnd, APP_SETTINGS_DEFAULT.downTermEnd),
+    upTermStart: normalizeTermDate(raw.upTermStart, APP_SETTINGS_DEFAULT.upTermStart),
+    upTermEnd: normalizeTermDate(raw.upTermEnd, APP_SETTINGS_DEFAULT.upTermEnd),
+    downTermStart: normalizeTermDate(raw.downTermStart, APP_SETTINGS_DEFAULT.downTermStart),
+    downTermEnd: normalizeTermDate(raw.downTermEnd, APP_SETTINGS_DEFAULT.downTermEnd),
     rowPerPage: parsePositiveInt(raw.rowPerPage, APP_SETTINGS_DEFAULT.rowPerPage),
     lowHoursThreshold: parsePositiveInt(raw.lowHoursThreshold, APP_SETTINGS_DEFAULT.lowHoursThreshold),
     orderAlertGapK: parsePositiveInt(raw.orderAlertGapK, APP_SETTINGS_DEFAULT.orderAlertGapK),
@@ -103,6 +118,18 @@ function getScheduleLoadWindow(appSettings) {
     startDate: addDaysToIsoDate(TODAY, -Number(appSettings?.scheduleLoadPastDays || 0)),
     endDate: addDaysToIsoDate(TODAY, Number(appSettings?.scheduleLoadFutureDays || 0)),
   }
+}
+
+function getDefaultMatrixScope(appSettings, todayIso = TODAY) {
+  const today = String(todayIso || '').substring(0, 10)
+  const upStart = String(appSettings?.upTermStart || '').substring(0, 10)
+  const upEnd = String(appSettings?.upTermEnd || '').substring(0, 10)
+  const downStart = String(appSettings?.downTermStart || '').substring(0, 10)
+  const downEnd = String(appSettings?.downTermEnd || '').substring(0, 10)
+
+  if (today && upStart && upEnd && today >= upStart && today <= upEnd) return 'up'
+  if (today && downStart && downEnd && today >= downStart && today <= downEnd) return 'down'
+  return 'year'
 }
 
 function getBookAlertSetCodes(student, bookAlertDays) {
@@ -729,6 +756,7 @@ function App() {
   }
 
   function handleOpenSettings() {
+    setMobileSidebarOpen(false)
     setSettingsOpen(true)
   }
 
@@ -1157,7 +1185,7 @@ function App() {
                 setMatrixLevel={(level) =>
                   setMatrixLevelState((prev) => ({ ...prev, [selectedId]: level }))
                 }
-                matrixScope={matrixScopeState[selectedId] || 'all'}
+                matrixScope={matrixScopeState[selectedId] || getDefaultMatrixScope(settings)}
                 setMatrixScope={(scope) =>
                   setMatrixScopeState((prev) => ({ ...prev, [selectedId]: scope }))
                 }

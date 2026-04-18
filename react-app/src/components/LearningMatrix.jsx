@@ -1,4 +1,4 @@
-import { getCurrentTermRange, inCurrentTerm } from '../dateUtils'
+import { dateStrToISO } from '../dateUtils'
 import {
   getCurrentBook,
   getLearnedBookProgressMap,
@@ -16,17 +16,68 @@ function getBookOrderState(bookOrderStateMap, studentId, bookCode) {
   return bookOrderStateMap?.[`${studentId}__${String(bookCode || '').toUpperCase()}`] || ''
 }
 
+function getScopeRanges(settings) {
+  return {
+    up: {
+      key: 'up',
+      label: '上學期',
+      start: String(settings?.upTermStart || ''),
+      end: String(settings?.upTermEnd || ''),
+    },
+    down: {
+      key: 'down',
+      label: '下學期',
+      start: String(settings?.downTermStart || ''),
+      end: String(settings?.downTermEnd || ''),
+    },
+  }
+}
+
+function isDateInRange(dateStr, start, end) {
+  const iso = dateStrToISO(dateStr)
+  if (!iso || !start || !end) return false
+  return iso >= start && iso <= end
+}
+
+function filterScheduleByScope(scheduleTable, settings, scope) {
+  const rows = Array.isArray(scheduleTable) ? scheduleTable : []
+  const ranges = getScopeRanges(settings)
+
+  if (scope === 'up') {
+    return rows.filter((row) => isDateInRange(row.date, ranges.up.start, ranges.up.end))
+  }
+
+  if (scope === 'down') {
+    return rows.filter((row) => isDateInRange(row.date, ranges.down.start, ranges.down.end))
+  }
+
+  return rows.filter(
+    (row) =>
+      isDateInRange(row.date, ranges.up.start, ranges.up.end) ||
+      isDateInRange(row.date, ranges.down.start, ranges.down.end)
+  )
+}
+
+function getScopeLabel(settings, scope) {
+  const ranges = getScopeRanges(settings)
+
+  if (scope === 'up') {
+    return `${ranges.up.label}（${ranges.up.start} ～ ${ranges.up.end}）`
+  }
+
+  if (scope === 'down') {
+    return `${ranges.down.label}（${ranges.down.start} ～ ${ranges.down.end}）`
+  }
+
+  return `上＋下學期（${ranges.up.start} ～ ${ranges.up.end}；${ranges.down.start} ～ ${ranges.down.end}）`
+}
+
 function getOrderPromptContext(student, level, grade, settings, bookOrderStateMap, scope) {
   const k = getStudentOrderAlertGapK(student, settings)
-  const scopedStudent =
-    scope === 'term'
-      ? {
-          ...student,
-          scheduleTable: (student.scheduleTable || []).filter((row) =>
-            inCurrentTerm(row.date, settings)
-          ),
-        }
-      : student
+  const scopedStudent = {
+    ...student,
+    scheduleTable: filterScheduleByScope(student.scheduleTable || [], settings, scope),
+  }
 
   const learnedMap = getLearnedBookProgressMap(scopedStudent)
   const plannedMap = getPlannedBookProgressMap(scopedStudent)
@@ -94,18 +145,13 @@ function LearningMatrix({
   onOrderPrompt,
 }) {
   const currentLevel = matrixLevel || student.level || 'GK'
-  const currentScope = matrixScope || 'all'
-  const term = getCurrentTermRange(undefined, settings)
+  const currentScope = matrixScope || 'year'
+  const scopeLabel = getScopeLabel(settings, currentScope)
 
-  const scopedStudent =
-    currentScope === 'term'
-      ? {
-          ...student,
-          scheduleTable: (student.scheduleTable || []).filter((row) =>
-            inCurrentTerm(row.date, settings)
-          ),
-        }
-      : student
+  const scopedStudent = {
+    ...student,
+    scheduleTable: filterScheduleByScope(student.scheduleTable || [], settings, currentScope),
+  }
 
   const learnedMap = getLearnedBookProgressMap(scopedStudent)
   const plannedMap = getPlannedBookProgressMap(scopedStudent)
@@ -137,7 +183,7 @@ function LearningMatrix({
           <div className="section-title">🧭 書號學習矩陣</div>
           <div className="section-sub">
             綠底 X＝整本已完成 ◐＝半本已完成 ○＝已排入學習進度但尚未確認 黃底 ○＝有庫存
-            紅底 ○＝無庫存 顯示範圍：{term.label}（{term.start} ～ {term.end}）
+            紅底 ○＝無庫存 顯示範圍：{scopeLabel}
           </div>
         </div>
       </div>
@@ -156,16 +202,22 @@ function LearningMatrix({
 
         <span className="history-toolbar-label scope">範圍：</span>
         <button
-          className={`history-tab ${currentScope === 'all' ? 'active' : ''}`}
-          onClick={() => setMatrixScope('all')}
+          className={`history-tab ${currentScope === 'up' ? 'active' : ''}`}
+          onClick={() => setMatrixScope('up')}
         >
-          全部
+          上學期
         </button>
         <button
-          className={`history-tab ${currentScope === 'term' ? 'active' : ''}`}
-          onClick={() => setMatrixScope('term')}
+          className={`history-tab ${currentScope === 'down' ? 'active' : ''}`}
+          onClick={() => setMatrixScope('down')}
         >
-          本學期
+          下學期
+        </button>
+        <button
+          className={`history-tab ${currentScope === 'year' ? 'active' : ''}`}
+          onClick={() => setMatrixScope('year')}
+        >
+          上＋下學期
         </button>
 
         <button className="btn btn-outline btn-sm" disabled={syncLocked} onClick={onSync}>

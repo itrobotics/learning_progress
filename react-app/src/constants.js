@@ -1,10 +1,10 @@
 export const TODAY = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' })
 
 export const APP_SETTINGS_DEFAULT = {
-  upTermStart: '08/01',
-  upTermEnd: '01/31',
-  downTermStart: '02/01',
-  downTermEnd: '07/31',
+  upTermStart: '2025-08-01',
+  upTermEnd: '2026-01-31',
+  downTermStart: '2026-02-01',
+  downTermEnd: '2026-07-31',
   rowPerPage: 25,
   lowHoursThreshold: 4,
   orderAlertGapK: 4,

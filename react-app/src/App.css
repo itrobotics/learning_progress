@@ -1587,8 +1587,13 @@ input {
   border-radius: 7px;
   outline: none;
   background: white;
+  color: var(--gray-800);
   font-size: 12px;
   transition: border-color 0.15s;
+}
+
+.form-control::placeholder {
+  color: var(--gray-400);
 }
 
 .form-control:focus {

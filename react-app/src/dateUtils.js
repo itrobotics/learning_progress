@@ -76,33 +76,37 @@ export function parseMdToNum(md) {
   return Number(m[1]) * 100 + Number(m[2])
 }
 
+function normalizeTermBoundary(value) {
+  const iso = dateStrToISO(value)
+  if (iso && /^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso
+  return ''
+}
+
 export function getCurrentTermRange(todayIso = TODAY, appSettings = APP_SETTINGS_DEFAULT) {
-  const [yStr, mStr, dStr] = String(todayIso).split('-')
-  const y = Number(yStr)
-  const md = Number(mStr) * 100 + Number(dStr)
+  const today = dateStrToISO(todayIso) || TODAY
+  const upStart = normalizeTermBoundary(appSettings.upTermStart)
+  const upEnd = normalizeTermBoundary(appSettings.upTermEnd)
+  const downStart = normalizeTermBoundary(appSettings.downTermStart)
+  const downEnd = normalizeTermBoundary(appSettings.downTermEnd)
 
-  const upStart = parseMdToNum(appSettings.upTermStart)
-  const upEnd = parseMdToNum(appSettings.upTermEnd)
-  const downStart = parseMdToNum(appSettings.downTermStart)
-  const downEnd = parseMdToNum(appSettings.downTermEnd)
-
-  if (!upStart || !upEnd || !downStart || !downEnd) {
-    return { start: `${y}-02-01`, end: `${y}-07-31`, label: '下學期' }
+  if (upStart && upEnd && today >= upStart && today <= upEnd) {
+    return { start: upStart, end: upEnd, label: '上學期' }
   }
 
-  const fmt = (yy, mdNum) => {
-    const mm = Math.floor(mdNum / 100)
-    const dd = mdNum % 100
-    return `${yy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`
+  if (downStart && downEnd && today >= downStart && today <= downEnd) {
+    return { start: downStart, end: downEnd, label: '下學期' }
   }
 
-  if (md >= upStart) {
-    return { start: fmt(y, upStart), end: fmt(y + 1, upEnd), label: '上學期' }
+  if (upStart && upEnd) {
+    return { start: upStart, end: upEnd, label: '上學期' }
   }
-  if (md <= upEnd) {
-    return { start: fmt(y - 1, upStart), end: fmt(y, upEnd), label: '上學期' }
+
+  if (downStart && downEnd) {
+    return { start: downStart, end: downEnd, label: '下學期' }
   }
-  return { start: fmt(y, downStart), end: fmt(y, downEnd), label: '下學期' }
+
+  const y = Number(String(today).split('-')[0]) || new Date().getFullYear()
+  return { start: `${y}-02-01`, end: `${y}-07-31`, label: '下學期' }
 }
 
 export function inCurrentTerm(dateStr, appSettings = APP_SETTINGS_DEFAULT, todayIso = TODAY) {

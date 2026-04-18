@@ -69,42 +69,42 @@ function SettingsModal({ open, settings, onClose, onSave }) {
 
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">上學期開始</label>
+              <label className="form-label">上學期開始日期</label>
               <input
                 className="form-control"
                 value={form.upTermStart || ''}
                 onChange={(e) => updateField('upTermStart', e.target.value)}
-                placeholder="08/01"
+                placeholder="2025/08/01 或 2025-08-01"
               />
             </div>
             <div className="form-group">
-              <label className="form-label">上學期結束</label>
+              <label className="form-label">上學期結束日期</label>
               <input
                 className="form-control"
                 value={form.upTermEnd || ''}
                 onChange={(e) => updateField('upTermEnd', e.target.value)}
-                placeholder="01/31"
+                placeholder="2026/01/31 或 2026-01-31"
               />
             </div>
           </div>
 
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">下學期開始</label>
+              <label className="form-label">下學期開始日期</label>
               <input
                 className="form-control"
                 value={form.downTermStart || ''}
                 onChange={(e) => updateField('downTermStart', e.target.value)}
-                placeholder="02/01"
+                placeholder="2026/02/01 或 2026-02-01"
               />
             </div>
             <div className="form-group">
-              <label className="form-label">下學期結束</label>
+              <label className="form-label">下學期結束日期</label>
               <input
                 className="form-control"
                 value={form.downTermEnd || ''}
                 onChange={(e) => updateField('downTermEnd', e.target.value)}
-                placeholder="07/31"
+                placeholder="2026/07/31 或 2026-07-31"
               />
             </div>
           </div>
