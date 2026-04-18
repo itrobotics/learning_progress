@@ -8,7 +8,7 @@ import StudentDetailPanel from './components/StudentDetailPanel'
 import SimulationModal from './components/SimulationModal'
 import SettingsModal from './components/SettingsModal'
 import StudentManageModal from './components/StudentManageModal'
-import { APP_SETTINGS_DEFAULT, TODAY } from './constants'
+import { APP_SETTINGS_DEFAULT, BRANCHES, TODAY } from './constants'
 import {
   fetchStudents,
   fetchSettings,
@@ -395,6 +395,8 @@ function App() {
   const mobileStudentLabel = selectedStudent?.name
     ? `目前學生：${selectedStudent.name}`
     : '選擇學生'
+  const mobileModuleLabel = activeModule === 'schedule' ? '學習進度' : '訂購總覽'
+  const mobileDrawerSummary = `${currentBranch}｜${mobileModuleLabel}｜${mobileStudentLabel}`
 
   const orderFilters = useMemo(
     () => ({
@@ -426,6 +428,34 @@ function App() {
   function handleSelectStudent(id) {
     setSelectedId(id)
     setMobileSidebarOpen(false)
+  }
+
+  function handleToggleMobileDrawer() {
+    setMobileSidebarOpen((prev) => !prev)
+  }
+
+  function handleCloseMobileDrawer() {
+    setMobileSidebarOpen(false)
+  }
+
+  function handleSelectBranchMobile(branch) {
+    setCurrentBranch(branch)
+    setMobileSidebarOpen(false)
+  }
+
+  function handleSelectModuleMobile(module) {
+    setActiveModule(module)
+    setMobileSidebarOpen(false)
+  }
+
+  function handleOpenSettingsMobile() {
+    setMobileSidebarOpen(false)
+    handleOpenSettings()
+  }
+
+  function handleRefreshMobile() {
+    setMobileSidebarOpen(false)
+    handleRefresh()
   }
 
   async function preloadBranchSchedules(branch) {
@@ -984,7 +1014,91 @@ function App() {
         setActiveModule={setActiveModule}
         onOpenSettings={handleOpenSettings}
         onRefresh={handleRefresh}
+        mobileDrawerOpen={mobileSidebarOpen}
+        onToggleMobileDrawer={handleToggleMobileDrawer}
       />
+
+      <div
+        className={`mobile-drawer-backdrop ${mobileSidebarOpen ? 'open' : ''}`}
+        onClick={handleCloseMobileDrawer}
+      />
+      <aside
+        className={`mobile-drawer ${mobileSidebarOpen ? 'open' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mobile-drawer-header">
+          <div className="mobile-drawer-title">功能選單</div>
+          <button className="mobile-drawer-close" onClick={handleCloseMobileDrawer}>
+            ✕
+          </button>
+        </div>
+
+        <div className="mobile-drawer-section">
+          <label className="mobile-drawer-label" htmlFor="mobile-branch-select">
+            branch
+          </label>
+          <select
+            id="mobile-branch-select"
+            className="mobile-drawer-select"
+            value={currentBranch}
+            onChange={(e) => handleSelectBranchMobile(e.target.value)}
+          >
+            {BRANCHES.map((branch) => (
+              <option key={branch} value={branch}>
+                {branch}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="mobile-drawer-section">
+          <div className="mobile-drawer-label">功能</div>
+          <div className="nav-menu mobile-drawer-nav-menu">
+            <button
+              className={`nav-menu-btn ${activeModule === 'schedule' ? 'active' : ''}`}
+              onClick={() => handleSelectModuleMobile('schedule')}
+            >
+              📚 學習進度
+            </button>
+            <button
+              className={`nav-menu-btn ${activeModule === 'order' ? 'active' : ''}`}
+              onClick={() => handleSelectModuleMobile('order')}
+            >
+              📦 書籍訂購
+            </button>
+          </div>
+        </div>
+
+        <div className="mobile-drawer-section">
+          <div className="mobile-drawer-label">系統</div>
+          <div className="mobile-drawer-action-list">
+            <button className="mobile-drawer-action-btn" onClick={handleOpenSettingsMobile}>
+              ⚙️ 系統設定
+            </button>
+            <button className="mobile-drawer-action-btn" onClick={handleRefreshMobile}>
+              🔄 重新整理
+            </button>
+          </div>
+        </div>
+
+        <div className="mobile-drawer-section mobile-drawer-student-section">
+          <div className="mobile-drawer-label">學生</div>
+          <StudentSidebar
+            loading={loading}
+            errorMsg={errorMsg}
+            currentSearch={currentSearch}
+            setCurrentSearch={setCurrentSearch}
+            currentFilter={currentFilter}
+            setCurrentFilter={setCurrentFilter}
+            filteredStudents={filteredStudents}
+            collapsedLevels={collapsedLevels}
+            toggleLevel={toggleLevel}
+            selectedId={selectedId}
+            setSelectedId={handleSelectStudent}
+            onOpenCreateStudent={handleOpenCreateStudent}
+          />
+        </div>
+      </aside>
 
       <div className="main-layout">
         <StudentSidebar
@@ -1028,35 +1142,6 @@ function App() {
                 </div>
               </div>
 
-              <div className="mobile-sidebar-shell">
-                <button
-                  className={`mobile-sidebar-toggle ${mobileSidebarOpen ? 'open' : ''}`}
-                  onClick={() => setMobileSidebarOpen((prev) => !prev)}
-                >
-                  <span>{mobileStudentLabel}</span>
-                  <span>{mobileSidebarOpen ? '▲' : '▼'}</span>
-                </button>
-
-                {mobileSidebarOpen && (
-                  <div className="mobile-sidebar-panel">
-                    <StudentSidebar
-                      loading={loading}
-                      errorMsg={errorMsg}
-                      currentSearch={currentSearch}
-                      setCurrentSearch={setCurrentSearch}
-                      currentFilter={currentFilter}
-                      setCurrentFilter={setCurrentFilter}
-                      filteredStudents={filteredStudents}
-                      collapsedLevels={collapsedLevels}
-                      toggleLevel={toggleLevel}
-                      selectedId={selectedId}
-                      setSelectedId={handleSelectStudent}
-                      onOpenCreateStudent={handleOpenCreateStudent}
-                    />
-                  </div>
-                )}
-              </div>
-
               <StudentDetailPanel
                 selectedStudent={selectedStudent}
                 settings={settings}
@@ -1083,35 +1168,6 @@ function App() {
             </>
           ) : (
             <>
-              <div className="mobile-sidebar-shell">
-                <button
-                  className={`mobile-sidebar-toggle ${mobileSidebarOpen ? 'open' : ''}`}
-                  onClick={() => setMobileSidebarOpen((prev) => !prev)}
-                >
-                  <span>{mobileStudentLabel}</span>
-                  <span>{mobileSidebarOpen ? '▲' : '▼'}</span>
-                </button>
-
-                {mobileSidebarOpen && (
-                  <div className="mobile-sidebar-panel">
-                    <StudentSidebar
-                      loading={loading}
-                      errorMsg={errorMsg}
-                      currentSearch={currentSearch}
-                      setCurrentSearch={setCurrentSearch}
-                      currentFilter={currentFilter}
-                      setCurrentFilter={setCurrentFilter}
-                      filteredStudents={filteredStudents}
-                      collapsedLevels={collapsedLevels}
-                      toggleLevel={toggleLevel}
-                      selectedId={selectedId}
-                      setSelectedId={handleSelectStudent}
-                      onOpenCreateStudent={handleOpenCreateStudent}
-                    />
-                  </div>
-                )}
-              </div>
-
               <OrderSummaryView
                 currentBranch={currentBranch}
                 orderSearch={orderSearch}

@@ -65,6 +65,23 @@ input {
   display: none;
 }
 
+.topnav-mobile-menu-btn {
+  display: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.15s;
+}
+
+.topnav-mobile-menu-btn.open {
+  background: rgba(255, 255, 255, 0.24);
+}
+
 .mobile-sidebar-toggle {
   width: 100%;
   border: 1px solid var(--gray-200);
@@ -89,6 +106,278 @@ input {
 
 .mobile-sidebar-panel {
   margin-top: 10px;
+}
+
+.mobile-drawer-backdrop {
+  display: none;
+}
+
+.mobile-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: min(360px, 88vw);
+  height: 100vh;
+  background: white;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+  z-index: 1200;
+  transform: translateX(-100%);
+  transition: transform 0.22s ease;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+.mobile-drawer.open {
+  transform: translateX(0);
+}
+
+.mobile-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.mobile-drawer-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+.mobile-drawer-close {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  background: white;
+  color: var(--gray-600);
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.mobile-drawer-section {
+  padding: 14px 16px 0;
+}
+
+.mobile-drawer-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gray-600);
+  margin-bottom: 8px;
+}
+
+.mobile-drawer-branch-tabs,
+.mobile-drawer-nav-menu {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.mobile-drawer-select {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  background: white;
+  color: var(--gray-800);
+  padding: 8px 12px;
+  font-size: 14px;
+  outline: none;
+}
+
+.mobile-drawer-select:focus {
+  border-color: var(--primary);
+}
+
+.mobile-drawer-branch-tabs {
+  width: 100%;
+}
+
+.mobile-drawer-nav-menu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mobile-drawer-nav-menu .nav-menu-btn {
+  width: 100%;
+  border: 1px solid var(--gray-200);
+  background: white;
+  color: var(--gray-600);
+}
+
+.mobile-drawer-nav-menu .nav-menu-btn.active {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.mobile-drawer-action-list {
+  display: grid;
+  gap: 8px;
+}
+
+.mobile-drawer-action-btn {
+  width: 100%;
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+  background: white;
+  color: var(--gray-700, #374151);
+  text-align: left;
+  padding: 11px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mobile-drawer-action-btn:hover {
+  background: var(--gray-50);
+}
+
+.mobile-drawer-student-section {
+  min-height: 0;
+  display: block;
+  padding-bottom: 16px;
+}
+
+.mobile-drawer-student-section .sidebar {
+  width: 100%;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 0;
+  background: transparent;
+}
+
+.mobile-drawer-student-section .sidebar-header {
+  padding: 0;
+  border-bottom: none;
+}
+
+.mobile-drawer-student-section .student-list {
+  max-height: none;
+  overflow: visible;
+  padding-bottom: 8px;
+}
+
+.mobile-drawer-student-section .level-group {
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.mobile-drawer-student-section .level-group-header {
+  background: transparent;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.mobile-drawer-student-section .student-item {
+  padding-left: 0;
+  padding-right: 0;
+  background: transparent;
+}
+
+.mobile-drawer-student-section .student-item.active {
+  background: var(--primary-light);
+  border-left: none;
+  border-radius: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.schedule-mobile-list {
+  display: none;
+}
+
+.schedule-mobile-card {
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  background: white;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.schedule-mobile-card.depletion-row {
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.schedule-mobile-card.post-depletion-row {
+  opacity: 0.72;
+}
+
+.schedule-mobile-summary {
+  width: 100%;
+  border: none;
+  background: white;
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.schedule-mobile-summary-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.schedule-mobile-date {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gray-800);
+  line-height: 1.4;
+}
+
+.schedule-mobile-hours {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--gray-600);
+}
+
+.schedule-mobile-summary-side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.schedule-mobile-expand-icon {
+  font-size: 11px;
+  color: var(--gray-400);
+}
+
+.schedule-mobile-detail {
+  border-top: 1px solid var(--gray-100);
+  padding: 12px 14px;
+  background: var(--gray-50);
+}
+
+.schedule-mobile-field + .schedule-mobile-field {
+  margin-top: 10px;
+}
+
+.schedule-mobile-field-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-600);
+  margin-bottom: 4px;
+}
+
+.schedule-mobile-field-value {
+  font-size: 13px;
+  color: var(--gray-800);
+  line-height: 1.5;
+}
+
+.schedule-desktop-table {
+  display: block;
 }
 
 .topnav {
@@ -1591,6 +1880,17 @@ input {
 }
 
 @media (max-width: 1100px) {
+  .mobile-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 1190;
+  }
+
+  .mobile-drawer-backdrop.open {
+    display: block;
+  }
+
   .main-layout {
     flex-direction: column;
     height: auto;
@@ -1650,18 +1950,17 @@ input {
 
 @media (max-width: 700px) {
   .topnav {
-    padding: 0 12px;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 8px;
+    padding: 10px 12px;
     min-height: auto;
-    padding-top: 10px;
-    padding-bottom: 10px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
   }
 
   .logo-wrap {
-    width: 100%;
+    width: auto;
+    min-width: 0;
+    flex: 1;
     align-items: center;
   }
 
@@ -1677,46 +1976,23 @@ input {
   }
 
   .topnav-right {
-    width: 100%;
+    width: auto;
+    flex-shrink: 0;
     display: flex;
-    flex-wrap: wrap;
-    align-items: stretch;
+    align-items: center;
     gap: 8px;
   }
 
-  .branch-tabs {
-    width: 100%;
+  .topnav-mobile-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  .branch-btn {
-    flex: 1 1 0;
-    text-align: center;
-  }
-
-  .nav-menu {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    flex-wrap: nowrap;
-    gap: 8px;
-    margin-left: 0;
-    padding-left: 0;
-    border-left: none;
-    order: -1;
-  }
-
-  .nav-menu-btn {
-    width: 100%;
-    min-width: 0;
-    white-space: nowrap;
-    padding: 8px 10px;
-    font-size: 12px;
-    text-align: center;
-  }
-
-  .top-action-btn {
-    flex: 1 1 calc(50% - 4px);
-    text-align: center;
+  .topnav-right .branch-tabs,
+  .topnav-right .nav-menu,
+  .topnav-right .top-action-btn {
+    display: none;
   }
 
   .main-layout {
@@ -1759,6 +2035,27 @@ input {
     font-size: 13px;
   }
 
+  .mobile-drawer {
+    width: min(380px, 92vw);
+  }
+
+  .mobile-drawer-section {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .mobile-drawer-header {
+    padding: 14px 12px 10px;
+  }
+
+  .mobile-drawer-student-section .sidebar-header {
+    padding: 0;
+  }
+
+  .mobile-drawer-student-section .student-list {
+    max-height: none;
+  }
+
   .mobile-sidebar-panel .sidebar-header {
     padding: 12px;
   }
@@ -1769,11 +2066,15 @@ input {
 
   .pending-row-card {
     padding: 0 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
 
   .pending-meta-grid {
     grid-template-columns: 1fr;
     gap: 8px;
+    margin-bottom: 0;
   }
 
   .meta-item {
@@ -1781,7 +2082,7 @@ input {
   }
 
   .pending-books-block {
-    margin-bottom: 10px;
+    margin-bottom: 0;
   }
 
   .pending-original-books {
@@ -1791,8 +2092,17 @@ input {
 
   .radio-group {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 8px;
+    margin-bottom: 0;
+  }
+
+  .radio-label {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--gray-200);
+    border-radius: 10px;
+    background: white;
   }
 
   .note-row {
@@ -1803,6 +2113,13 @@ input {
 
   .note-input {
     min-width: 0;
+    width: 100%;
+  }
+
+  .meta-item,
+  .pending-books-block,
+  .note-row,
+  .confirm-action-row {
     width: 100%;
   }
 
@@ -1818,17 +2135,14 @@ input {
     padding: 0 12px 12px;
   }
 
-  .sched-table {
-    font-size: 12px;
+  .schedule-mobile-list {
+    display: grid;
+    gap: 10px;
+    padding: 0 12px 12px;
   }
 
-  .sched-table th {
-    padding: 7px 8px;
-    font-size: 10px;
-  }
-
-  .sched-table td {
-    padding: 7px 8px;
+  .schedule-desktop-table {
+    display: none;
   }
 
   .status-badge {

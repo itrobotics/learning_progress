@@ -7,6 +7,8 @@ function TopNav({
   setActiveModule,
   onOpenSettings,
   onRefresh,
+  mobileDrawerOpen,
+  onToggleMobileDrawer,
 }) {
   const logoSrc = `${import.meta.env.BASE_URL}ais-logo.png`
 
@@ -17,6 +19,12 @@ function TopNav({
         <div className="logo">艾思-學習進度管理系統 (MPM數學專用)</div>
       </div>
       <div className="topnav-right">
+        <button
+          className={`topnav-mobile-menu-btn ${mobileDrawerOpen ? 'open' : ''}`}
+          onClick={onToggleMobileDrawer}
+        >
+          ☰ 選單
+        </button>
         <div className="branch-tabs">
           {BRANCHES.map((branch) => (
             <button

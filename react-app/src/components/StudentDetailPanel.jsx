@@ -69,6 +69,7 @@ function StudentDetailPanel({
   const [adjustHours, setAdjustHours] = useState('')
   const [adjustNote, setAdjustNote] = useState('')
   const [adjustMsg, setAdjustMsg] = useState('')
+  const [expandedScheduleRowKey, setExpandedScheduleRowKey] = useState('')
 
   const pageSize = Number(settings?.rowPerPage || 25)
 
@@ -102,6 +103,7 @@ function StudentDetailPanel({
     setAdjustHours('')
     setAdjustNote('')
     setAdjustMsg('')
+    setExpandedScheduleRowKey('')
   }, [selectedStudent?.id])
 
   useEffect(() => {
@@ -120,6 +122,14 @@ function StudentDetailPanel({
     setConfirmHours(String(nextPendingRow.hours ?? ''))
     setConfirmError('')
   }, [nextPendingRow?.rowId])
+
+  const totalPages = Math.max(1, Math.ceil(orderedScheduleRows.length / pageSize))
+  const currentPage = Math.min(totalPages, Math.max(1, schedulePage))
+  const pageRows = orderedScheduleRows.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+
+  useEffect(() => {
+    setExpandedScheduleRowKey('')
+  }, [currentPage])
 
   if (!selectedStudent) {
     return (
@@ -151,9 +161,6 @@ function StudentDetailPanel({
       .filter(Boolean)
       .join('、') || '未設定'
 
-  const totalPages = Math.max(1, Math.ceil(orderedScheduleRows.length / pageSize))
-  const currentPage = Math.min(totalPages, Math.max(1, schedulePage))
-  const pageRows = orderedScheduleRows.slice((currentPage - 1) * pageSize, currentPage * pageSize)
   const depletionTooltip =
     '按照每週排課節奏，從今天開始一天一天扣剩餘時數，扣到 0（或以下）的那一天。'
   const depletionDateIso = /^\d{4}-\d{2}-\d{2}$/.test(depletionInfo) ? depletionInfo : ''
@@ -494,61 +501,133 @@ function StudentDetailPanel({
             <div className="es-text">尚無進度表資料。</div>
           </div>
         ) : (
-          <div className="table-wrap">
-            <table className="sched-table">
-              <thead>
-                <tr>
-                  <th>日期</th>
-                  <th>星期</th>
-                  <th>時數</th>
-                  <th>預計書號</th>
-                  <th>學習狀態</th>
-                  <th>備註</th>
-                  <th>確認時間</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pageRows.map((row) => {
-                  const statusMeta = statusBadgeMeta(row.status)
-                  const rowDate = String(row.date || '').substring(0, 10)
-                  const isDepletionRow = !!depletionDateIso && rowDate === depletionDateIso
-                  const isAfterDepletionRow = !!depletionDateIso && rowDate > depletionDateIso
-                  const rowClassName = [
-                    isDepletionRow ? 'depletion-row' : '',
-                    isAfterDepletionRow ? 'post-depletion-row' : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')
+          <>
+            <div className="schedule-mobile-list">
+              {pageRows.map((row) => {
+                const statusMeta = statusBadgeMeta(row.status)
+                const rowDate = String(row.date || '').substring(0, 10)
+                const isDepletionRow = !!depletionDateIso && rowDate === depletionDateIso
+                const isAfterDepletionRow = !!depletionDateIso && rowDate > depletionDateIso
+                const rowClassName = [
+                  isDepletionRow ? 'depletion-row' : '',
+                  isAfterDepletionRow ? 'post-depletion-row' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')
+                const rowKey = row.rowId || `${row.date}-${row.__originalIndex}`
+                const expanded = expandedScheduleRowKey === rowKey
 
-                  return (
-                    <tr key={row.rowId || `${row.date}-${row.__originalIndex}`} className={rowClassName}>
-                      <td>{formatDateForUI(row.date)}</td>
-                      <td>星期{getDowZh(row.date, row.dow)}</td>
-                      <td>{row.hours}hr</td>
-                      <td>
-                        {(row.books || []).length ? (
-                          (row.books || []).map((book) => (
-                            <span className="book-tag" key={`${row.rowId}-${book}`}>
-                              {book}
-                            </span>
-                          ))
-                        ) : (
-                          '—'
-                        )}
-                      </td>
-                      <td>
+                return (
+                  <div key={rowKey} className={`schedule-mobile-card ${rowClassName}`.trim()}>
+                    <button
+                      className="schedule-mobile-summary"
+                      onClick={() => setExpandedScheduleRowKey(expanded ? '' : rowKey)}
+                    >
+                      <div className="schedule-mobile-summary-main">
+                        <div className="schedule-mobile-date">
+                          {formatDateForUI(row.date)}（星期{getDowZh(row.date, row.dow)}）
+                        </div>
+                        <div className="schedule-mobile-hours">{row.hours}hr</div>
+                      </div>
+                      <div className="schedule-mobile-summary-side">
                         <span className={`status-badge ${statusMeta.className}`}>
                           {statusMeta.label}
                         </span>
-                      </td>
-                      <td>{row.note || '—'}</td>
-                      <td>{formatDateTimeForUI(row.confirmedAt)}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                        <span className="schedule-mobile-expand-icon">{expanded ? '▲' : '▼'}</span>
+                      </div>
+                    </button>
+
+                    {expanded ? (
+                      <div className="schedule-mobile-detail">
+                        <div className="schedule-mobile-field">
+                          <div className="schedule-mobile-field-label">預計書號</div>
+                          <div className="schedule-mobile-field-value">
+                            {(row.books || []).length ? (
+                              (row.books || []).map((book) => (
+                                <span className="book-tag" key={`${row.rowId}-${book}`}>
+                                  {book}
+                                </span>
+                              ))
+                            ) : (
+                              '—'
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="schedule-mobile-field">
+                          <div className="schedule-mobile-field-label">備註</div>
+                          <div className="schedule-mobile-field-value">{row.note || '—'}</div>
+                        </div>
+
+                        <div className="schedule-mobile-field">
+                          <div className="schedule-mobile-field-label">確認時間</div>
+                          <div className="schedule-mobile-field-value">
+                            {formatDateTimeForUI(row.confirmedAt)}
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="table-wrap schedule-desktop-table">
+              <table className="sched-table">
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>星期</th>
+                    <th>時數</th>
+                    <th>預計書號</th>
+                    <th>學習狀態</th>
+                    <th>備註</th>
+                    <th>確認時間</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pageRows.map((row) => {
+                    const statusMeta = statusBadgeMeta(row.status)
+                    const rowDate = String(row.date || '').substring(0, 10)
+                    const isDepletionRow = !!depletionDateIso && rowDate === depletionDateIso
+                    const isAfterDepletionRow = !!depletionDateIso && rowDate > depletionDateIso
+                    const rowClassName = [
+                      isDepletionRow ? 'depletion-row' : '',
+                      isAfterDepletionRow ? 'post-depletion-row' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')
+
+                    return (
+                      <tr key={row.rowId || `${row.date}-${row.__originalIndex}`} className={rowClassName}>
+                        <td>{formatDateForUI(row.date)}</td>
+                        <td>星期{getDowZh(row.date, row.dow)}</td>
+                        <td>{row.hours}hr</td>
+                        <td>
+                          {(row.books || []).length ? (
+                            (row.books || []).map((book) => (
+                              <span className="book-tag" key={`${row.rowId}-${book}`}>
+                                {book}
+                              </span>
+                            ))
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                        <td>
+                          <span className={`status-badge ${statusMeta.className}`}>
+                            {statusMeta.label}
+                          </span>
+                        </td>
+                        <td>{row.note || '—'}</td>
+                        <td>{formatDateTimeForUI(row.confirmedAt)}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
 
