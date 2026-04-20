@@ -11,6 +11,7 @@ function TopNav({
   onToggleMobileDrawer,
 }) {
   const logoSrc = `${import.meta.env.BASE_URL}ais-logo.png`
+  const manualUrl = `${import.meta.env.BASE_URL}manuals/MPM系統使用者手冊.html`
   const fullTitle = '艾思-學習進度管理系統 (MPM數學專用)'
   const mobileTitle = '艾思 MPM 進度系統'
 
@@ -57,6 +58,12 @@ function TopNav({
           </button>
         </div>
 
+        <button
+          className="top-action-btn"
+          onClick={() => window.open(manualUrl, '_blank', 'noopener,noreferrer')}
+        >
+          help ?
+        </button>
         <button className="top-action-btn" onClick={onOpenSettings}>
           ⚙️ 系統設定
         </button>
