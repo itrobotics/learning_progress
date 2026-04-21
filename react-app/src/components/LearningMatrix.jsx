@@ -6,6 +6,7 @@ import {
   getStudentOrderAlertGapK,
 } from '../studentUtils'
 import {
+  getMainBookCode,
   getLegalNoSet,
   getLevelMaxNo,
   getSetRangeByNo,
@@ -130,6 +131,24 @@ function getOrderPromptContext(student, level, grade, settings, bookOrderStateMa
   return { level, grade: Number(grade), sets }
 }
 
+function getConfirmedBookStatusMap(scheduleTable) {
+  const map = new Map()
+  ;(scheduleTable || []).forEach((row) => {
+    const st = String(row?.status || '').trim().toLowerCase()
+    if (st !== 'match' && st !== 'behind' && st !== 'ahead') return
+    ;(row.books || []).forEach((token) => {
+      const code = getMainBookCode(token)
+      if (!code) return
+      if (st === 'behind') {
+        map.set(code, 'behind')
+        return
+      }
+      if (!map.has(code)) map.set(code, st)
+    })
+  })
+  return map
+}
+
 function LearningMatrix({
   student,
   settings,
@@ -155,6 +174,7 @@ function LearningMatrix({
 
   const learnedMap = getLearnedBookProgressMap(scopedStudent)
   const plannedMap = getPlannedBookProgressMap(scopedStudent)
+  const confirmedBookStatusMap = getConfirmedBookStatusMap(scopedStudent.scheduleTable || [])
   const legalNoSet = getLegalNoSet(currentLevel)
   const maxNo = getLevelMaxNo(currentLevel)
 
@@ -260,16 +280,19 @@ function LearningMatrix({
                   const book = `${currentLevel}${grade}${String(no).padStart(2, '0')}`
                   const learnedInfo = learnedMap.get(book)
                   if (learnedInfo) {
+                    const isBehindConfirmed = confirmedBookStatusMap.get(book) === 'behind'
                     return (
                       <td
                         key={no}
                           className={`${
-                            isBookProgressComplete(learnedInfo) ? 'cell-learned' : 'cell-half-learned'
+                            isBookProgressComplete(learnedInfo)
+                              ? (isBehindConfirmed ? 'cell-learned-behind' : 'cell-learned')
+                              : (isBehindConfirmed ? 'cell-half-learned-behind' : 'cell-half-learned')
                           } ${boundaryClass}`.trim()}
                           title={
                             isBookProgressComplete(learnedInfo)
-                              ? `${book}：整本已完成`
-                              : `${book}：半本已完成`
+                              ? `${book}：整本已完成${isBehindConfirmed ? '（落後進度）' : ''}`
+                              : `${book}：半本已完成${isBehindConfirmed ? '（落後進度）' : ''}`
                           }
                         >
                           {isBookProgressComplete(learnedInfo) ? 'X' : '◐'}

@@ -1233,6 +1233,7 @@ function App() {
         student={studentManageMode === 'edit' ? studentManageTarget : null}
         currentBranch={currentBranch}
         saving={studentManageSaving}
+        defaultOrderAlertGapK={Number(settings.orderAlertGapK || 0)}
         onClose={handleCloseStudentManage}
         onSave={handleSaveStudent}
         onDelete={handleDeleteStudent}

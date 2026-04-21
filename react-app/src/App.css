@@ -1267,8 +1267,8 @@ input {
 }
 
 .sb-behind {
-  background: #fee2e2;
-  color: #b91c1c;
+  background: #a1fa4f;
+  color: #1f2937;
 }
 
 .sb-ahead {
@@ -1407,6 +1407,18 @@ input {
 .cell-half-learned {
   background: #dcfce7;
   color: #166534;
+  font-weight: 800;
+}
+
+.cell-learned-behind {
+  background: #a1fa4f;
+  color: #1f2937;
+  font-weight: 800;
+}
+
+.cell-half-learned-behind {
+  background: #a1fa4f;
+  color: #1f2937;
   font-weight: 800;
 }
 

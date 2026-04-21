@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(netstat -ano)",
+      "Bash(findstr :3131)",
+      "Bash(npx serve:*)",
+      "Bash(python -m http.server 8765)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8765/index.html)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(pkill -f \"http.server 8765\")"
+    ]
+  }
+}

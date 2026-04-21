@@ -11,6 +11,14 @@ function cloneSimRows(rows) {
   }))
 }
 
+function addDaysToIsoDate(baseIso, days) {
+  const date = new Date(`${baseIso}T00:00:00`)
+  date.setDate(date.getDate() + Number(days || 0))
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+    date.getDate()
+  ).padStart(2, '0')}`
+}
+
 function simulate(level, grade, startNo, schedule, speed, startDateStr, remainingHours, endDateStr) {
   const allBooks = getMPMBooks(level, grade)
   const startBook = `${level}${grade}${String(startNo).padStart(2, '0')}`
@@ -107,6 +115,8 @@ function SimulationModal({
       '0'
     )}-${String(tomorrow.getDate()).padStart(2, '0')}`
 
+    const defaultEndDate = addDaysToIsoDate(tomorrowStr, 7)
+
     setForm({
       level: student.level,
       grade: Number(student.grade),
@@ -115,7 +125,7 @@ function SimulationModal({
       hours: Number(student.currentRemainingHours || student.confirmedHours || 0),
       orderAlertGapKByPerson: Number(student.orderAlertGapKByPerson || 0),
       startDate: tomorrowStr,
-      endDate: '',
+      endDate: defaultEndDate,
       schedule: (student.schedule || []).map((h) => Number(h || 0)),
     })
     setSimResult(null)
@@ -152,6 +162,10 @@ function SimulationModal({
           : next.startDate
 
       next.startDate = normalizedStartDate || TODAY
+
+      if (key === 'startDate' && !String(prev.endDate || '').trim()) {
+        next.endDate = addDaysToIsoDate(next.startDate, 7)
+      }
 
       if (next.endDate && next.endDate < next.startDate) {
         next.endDate = next.startDate

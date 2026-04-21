@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MPM 學習進度管理系統 - 使用者手冊</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --bg: #f8fafc;
+            --sidebar-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto+Sans+TC', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.6;
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            height: 100vh;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            overflow-y: auto;
+            padding: 2rem 1.5rem;
+            z-index: 100;
+        }
+
+        .sidebar h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sidebar nav ul {
+            list-style: none;
+        }
+
+        .sidebar nav ul li {
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar nav ul li a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            display: block;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .sidebar nav ul li a:hover {
+            background: #f1f5f9;
+            color: var(--primary);
+        }
+
+        .sidebar nav ul li a.active {
+            background: #ecfdf5;
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        main {
+            margin-left: 300px;
+            flex: 1;
+            padding: 4rem;
+            max-width: 1000px;
+        }
+
+        .container {
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            color: #0f172a;
+            letter-spacing: -0.025em;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+        }
+
+        h2 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-top: 4rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            color: #334155;
+        }
+
+        p {
+            margin-bottom: 1.25rem;
+            color: #475569;
+        }
+
+        ul, ol {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.75rem;
+            margin: 1.5rem 0;
+            box-shadow: var(--shadow-lg);
+            cursor: zoom-in;
+            transition: transform 0.3s ease;
+        }
+
+        img:hover {
+            transform: scale(1.02);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        .badge-pending { background: #fef9c3; color: #854d0e; }
+        .badge-match { background: #dcfce7; color: #166534; }
+        .badge-behind { background: #fee2e2; color: #991b1b; }
+        .badge-ahead { background: #dbeafe; color: #1e40af; }
+
+        .tip {
+            background: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .warning {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            margin: 1.5rem 0;
+        }
+
+        /* Image Modal */
+        #modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            cursor: zoom-out;
+        }
+
+        #modal img {
+            max-width: 90%;
+            max-height: 90%;
+            transform: none;
+            box-shadow: none;
+        }
+
+        footer {
+            margin-top: 5rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            main {
+                margin-left: 0;
+                padding: 2rem;
+            }
+            h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<aside class="sidebar">
+    <h2>📖 使用者手冊</h2>
+    <nav>
+        <ul>
+            <li><a href="#1-文件說明">1. 文件說明</a></li>
+            <li><a href="#2-首頁總覽">2. 首頁總覽</a></li>
+            <li><a href="#3-全頁畫面導覽">3. 全頁畫面導覽</a></li>
+            <li><a href="#4-左側學生列表操作">4. 左側學生列表操作</a></li>
+            <li><a href="#5-新增--編輯學生">5. 新增 / 編輯學生</a></li>
+            <li><a href="#6-學生詳細資料區">6. 學生詳細資料區</a></li>
+            <li><a href="#7-儲值時數功能">7. 儲值時數功能</a></li>
+            <li><a href="#8-生成學習進度表">8. 生成學習進度表</a></li>
+            <li><a href="#9-今日進度確認">9. 今日進度確認</a></li>
+            <li><a href="#10-學習進度表全覽">10. 學習進度表</a></li>
+            <li><a href="#11-書號學習矩陣">11. 書號學習矩陣</a></li>
+            <li><a href="#12-系統設定">12. 系統設定</a></li>
+            <li><a href="#13-書籍訂購模組">13. 書籍訂購模組</a></li>
+            <li><a href="#14-常見畫面結果解讀">14. 常見畫面解讀</a></li>
+            <li><a href="#15-建議操作順序">15. 建議操作順序</a></li>
+        </ul>
+    </nav>
+</aside>
+
+<main>
+    <div class="container">
+        <h1>MPM 學習進度管理系統</h1>
+        <p class="subtitle">系統操作圖文指引 & 最佳化實務手冊</p>
+
+        <section id="1-文件說明">
+            <h2>1. 文件說明</h2>
+            <div class="card">
+                <p>本文件為 <strong>MPM 學習進度管理系統</strong> 的圖文版使用手冊。系統旨在協助分校主任與行政人員高效管理學生學習時數與書籍進度。</p>
+                <div class="tip">
+                    <strong>💡 線上版本：</strong> 系統部署於 <a href="https://itrobotics.github.io/learning_progress/" target="_blank">learning_progress</a>。
+                </div>
+            </div>
+        </section>
+
+        <section id="2-首頁總覽">
+            <h2>2. 首頁總覽</h2>
+            <div class="card">
+                <p>下圖為桌面版系統首頁畫面，可同時看到上方導覽列、左側學生列表與右側主內容。</p>
+                <img src="manual_images/10-home-with-data.png" alt="首頁畫面">
+                <p>手機版則將導覽功能收納至側邊抽屜（Drawer），主畫面聚焦於目前學生的詳細資訊。</p>
+            </div>
+        </section>
+
+        <section id="3-全頁畫面導覽">
+            <h2>3. 全頁畫面導覽</h2>
+            <div class="card">
+                <img src="manual_images/01-home-full.png" alt="首頁全頁畫面">
+                <p>上方導覽列包含：</p>
+                <ul>
+                    <li><strong>分校切換：</strong> 快速切換延壽、安和、大直分校。</li>
+                    <li><strong>模組切換：</strong> 切換「📚 學習進度」與「📦 書籍訂購」。</li>
+                    <li><strong>功能按鈕：</strong> 開啟「⚙️ 系統設定」或「🔄 重新整理」資料。</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="4-左側學生列表操作">
+            <h2>4. 左側學生列表操作</h2>
+            <div class="card">
+                <img src="manual_images/04-student-list.png" alt="左側學生列表">
+                <ul>
+                    <li><strong>搜尋：</strong> 依姓名或年級快速過濾。</li>
+                    <li><strong>篩選標籤：</strong> 全部、時數預警、今待確認、逾期未確認。</li>
+                    <li><strong>Level 分組：</strong> 依 GK、GV、GA 展開/收合。</li>
+                </ul>
+                <div class="warning">
+                    <strong>狀態提示：</strong>
+                    <span class="badge badge-pending">🕒 今待確認</span>
+                    <span class="badge badge-behind">⏰ 逾期</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="5-新增--編輯學生">
+            <h2>5. 新增 / 編輯學生</h2>
+            <div class="card">
+                <img src="manual_images/03-sidebar-search-filter.png" alt="新增 / 編輯學生入口">
+                <p>填寫學生編號、姓名、分校、Level、速度等核心欄位。編輯模式下<strong>學生編號不可修改</strong>。</p>
+            </div>
+        </section>
+
+        <section id="6-學生詳細資料區">
+            <h2>6. 學生詳細資料區</h2>
+            <div class="card">
+                <img src="manual_images/11-main-with-data.png" alt="學生詳細資料區">
+                <p>顯示剩餘時數、預計耗盡日與需要套書提示。系統會自動計算目前所需書號區間，如 <code>GK201~GK208</code>。</p>
+            </div>
+        </section>
+
+        <section id="7-儲值時數功能">
+            <h2>7. 儲值時數功能</h2>
+            <div class="card">
+                <img src="manual_images/06-save-hours.png" alt="儲值時數功能">
+                <p>直接為學生增加時數，成功後會即時反映在「剩餘學習時數」與「預警狀態」中。</p>
+            </div>
+        </section>
+
+        <section id="8-生成學習進度表">
+            <h2>8. 生成學習進度表</h2>
+            <div class="card">
+                <img src="manual_images/06-detail-actions.png" alt="生成學習進度表入口">
+                <p>設定起始日期與速度，點擊 <strong>▶ 執行推演</strong>。確認預覽結果無誤後，再點擊儲存寫入資料庫。</p>
+            </div>
+        </section>
+
+        <section id="9-今日進度確認">
+            <h2>9. 今日進度確認</h2>
+            <div class="card">
+                <p>確認當日實際書號與時數，並選擇學習狀態：</p>
+                <div style="margin: 1rem 0;">
+                    <span class="badge badge-match">符合進度</span>
+                    <span class="badge badge-behind">落後進度</span>
+                    <span class="badge badge-ahead">超前進度</span>
+                </div>
+                <p>若選擇「落後進度」，系統會要求填寫原因備註。</p>
+            </div>
+        </section>
+
+        <section id="10-學習進度表全覽">
+            <h2>10. 學習進度表</h2>
+            <div class="card">
+                <img src="manual_images/14-schedule-view-with-data.png" alt="學習進度表">
+                <p>查看過往與未來的詳細排程。手機版可點擊展開卡片查看備註與確認時間。</p>
+            </div>
+        </section>
+
+        <section id="11-書號學習矩陣">
+            <h2>11. 書號學習矩陣</h2>
+            <div class="card">
+                <img src="manual_images/12-learning-matrix-with-data.png" alt="書號學習矩陣">
+                <p>視覺化管理書籍庫存與學習狀態：</p>
+                <ul>
+                    <li><span style="color: #16a34a; font-weight: bold;">綠底 X</span>：整本已完成</li>
+                    <li><span style="color: #ca8a04; font-weight: bold;">黃底 ○</span>：有庫存</li>
+                    <li><span style="color: #dc2626; font-weight: bold;">紅底 ○</span>：需訂購</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="12-系統設定">
+            <h2>12. 系統設定</h2>
+            <div class="card">
+                <img src="manual_images/02-topnav.png" alt="系統設定入口">
+                <p>設定學期起訖日、預警時數門檻、以及進度載入的範圍（前/後幾天）。</p>
+            </div>
+        </section>
+
+        <section id="13-書籍訂購模組">
+            <h2>13. 書籍訂購模組</h2>
+            <div class="card">
+                <img src="manual_images/15-order-summary-with-data.png" alt="書籍訂購模組">
+                <p>彙整全校待訂書籍清單。可依時間範圍（30/90天）篩選，加速書籍採購流程。</p>
+            </div>
+        </section>
+
+        <section id="14-常見畫面結果解讀">
+            <h2>14. 常見畫面解讀</h2>
+            <div class="card">
+                <ul>
+                    <li><strong>載入進度表中：</strong> 資料同步中，請稍候。</li>
+                    <li><strong>目前沒有待確認進度：</strong> 所有排程皆已確認或尚未到期。</li>
+                    <li><strong>時數預警：</strong> 剩餘時數低於設定值，請提醒家長繳費。</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="15-建議操作順序">
+            <h2>15. 建議操作順序</h2>
+            <div class="card">
+                <ol>
+                    <li>切換至正確分校。</li>
+                    <li>查看左側「今待確認」名單。</li>
+                    <li>點選學生並確認今日學習內容。</li>
+                    <li>檢查「需要套書」提示並更新庫存狀態。</li>
+                </ol>
+            </div>
+        </section>
+
+        <footer>
+            &copy; 2024 MPM 學習進度管理系統 - Powering Education Efficiency
+        </footer>
+    </div>
+</main>
+
+<div id="modal">
+    <img src="" alt="Full view">
+</div>
+
+<script>
+    // ScrollSpy and Active Link
+    const sections = document.querySelectorAll('section');
+    const navLinks = document.querySelectorAll('.sidebar nav ul li a');
+
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.clientHeight;
+            if (pageYOffset >= (sectionTop - 150)) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href').includes(current)) {
+                link.classList.add('active');
+            }
+        });
+    });
+
+    // Image Zoom
+    const modal = document.getElementById('modal');
+    const modalImg = modal.querySelector('img');
+    const imgs = document.querySelectorAll('main img');
+
+    imgs.forEach(img => {
+        img.addEventListener('click', () => {
+            modal.style.display = 'flex';
+            modalImg.src = img.src;
+        });
+    });
+
+    modal.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+</script>
+
+</body>
+</html>

@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { BRANCHES, LEVELS, WEEKDAYS } from '../constants'
 
-function buildInitialForm(student, currentBranch) {
+function buildInitialForm(student, currentBranch, defaultOrderAlertGapK = 0) {
+  const hasStudent = !!student
+  const initialPurchasedHours = Number(
+    student?.initHours ?? student?.currentRemainingHours ?? student?.confirmedHours ?? 0
+  )
+
   return {
     id: String(student?.id || '').trim(),
     name: String(student?.name || '').trim(),
@@ -10,11 +15,11 @@ function buildInitialForm(student, currentBranch) {
     grade: Number(student?.grade || 1),
     speed: Number(student?.speed || 1),
     confirmedNo: Number(student?.confirmedNo ?? 1),
-    currentRemainingHours: Number(
-      student?.currentRemainingHours ?? student?.confirmedHours ?? 0
+    currentRemainingHours: Number(student?.currentRemainingHours ?? student?.confirmedHours ?? initialPurchasedHours),
+    initHours: initialPurchasedHours,
+    orderAlertGapKByPerson: Number(
+      hasStudent ? student?.orderAlertGapKByPerson || 0 : defaultOrderAlertGapK || 0
     ),
-    initHours: Number(student?.initHours ?? student?.currentRemainingHours ?? student?.confirmedHours ?? 0),
-    orderAlertGapKByPerson: Number(student?.orderAlertGapKByPerson || 0),
     school: String(student?.school || student?.elementarySchool || student?.schoolName || '').trim(),
     schedule: Array.isArray(student?.schedule)
       ? student.schedule.map((hours) => Number(hours || 0))
@@ -28,20 +33,21 @@ function StudentManageModal({
   student,
   currentBranch,
   saving,
+  defaultOrderAlertGapK,
   onClose,
   onSave,
   onDelete,
 }) {
-  const [form, setForm] = useState(buildInitialForm(null, currentBranch))
+  const [form, setForm] = useState(buildInitialForm(null, currentBranch, defaultOrderAlertGapK))
   const [errorMsg, setErrorMsg] = useState('')
   const [actionMsg, setActionMsg] = useState('')
 
   useEffect(() => {
     if (!open) return
-    setForm(buildInitialForm(student, currentBranch))
+    setForm(buildInitialForm(student, currentBranch, defaultOrderAlertGapK))
     setErrorMsg('')
     setActionMsg('')
-  }, [open, student, currentBranch])
+  }, [open, student, currentBranch, defaultOrderAlertGapK])
 
   const isEdit = mode === 'edit'
   const title = isEdit ? '✏️ 編輯學生資料' : '➕ 新增學生'
@@ -56,6 +62,15 @@ function StudentManageModal({
     setForm((prev) => ({
       ...prev,
       [key]: value,
+    }))
+  }
+
+  function updatePurchasedHours(value) {
+    const next = Number(value || 0)
+    setForm((prev) => ({
+      ...prev,
+      initHours: next,
+      currentRemainingHours: isEdit ? prev.currentRemainingHours : next,
     }))
   }
 
@@ -278,25 +293,29 @@ function StudentManageModal({
 
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">剩餘學習時數</label>
-              <input
-                className="form-control"
-                type="number"
-                min="0"
-                value={form.currentRemainingHours}
-                disabled={saving}
-                onChange={(e) => updateField('currentRemainingHours', Number(e.target.value))}
-              />
-            </div>
-            <div className="form-group">
               <label className="form-label">已購時數</label>
               <input
                 className="form-control"
                 type="number"
                 min="0"
+                step="1"
+                inputMode="numeric"
                 value={form.initHours}
                 disabled={saving}
-                onChange={(e) => updateField('initHours', Number(e.target.value))}
+                onChange={(e) => updatePurchasedHours(e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">剩餘學習時數</label>
+              <input
+                className="form-control"
+                type="number"
+                min="0"
+                step="1"
+                inputMode="numeric"
+                value={form.currentRemainingHours}
+                disabled={saving}
+                onChange={(e) => updateField('currentRemainingHours', Number(e.target.value))}
               />
             </div>
           </div>
