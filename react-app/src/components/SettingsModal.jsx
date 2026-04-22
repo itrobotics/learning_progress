@@ -187,6 +187,137 @@ function SettingsModal({ open, settings, onClose, onSave }) {
             </div>
           </div>
 
+          <div className="section-title modal-section-gap">分校跑馬燈訊息</div>
+
+          <div className="form-group">
+            <label className="form-label">延壽分校跑馬燈訊息</label>
+            <textarea
+              className="form-control"
+              rows={2}
+              value={form.marqueeMsgYanShou || ''}
+              onChange={(e) => updateField('marqueeMsgYanShou', e.target.value)}
+              placeholder="輸入延壽分校要顯示的提醒訊息"
+            />
+            <label className="radio-label" style={{ marginTop: 6 }}>
+              <input
+                type="checkbox"
+                checked={!!form.marqueeEnabledYanShou}
+                onChange={(e) => updateField('marqueeEnabledYanShou', e.target.checked)}
+              />
+              啟用延壽分校跑馬燈
+            </label>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">延壽分校跑馬燈顏色</label>
+              <input
+                className="form-control"
+                type="color"
+                value={form.marqueeColorYanShou || '#166534'}
+                onChange={(e) => updateField('marqueeColorYanShou', e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">延壽分校跑馬燈速度</label>
+              <select
+                className="form-control"
+                value={form.marqueeSpeedYanShou || '16'}
+                onChange={(e) => updateField('marqueeSpeedYanShou', e.target.value)}
+              >
+                <option value="24">慢（24秒）</option>
+                <option value="16">中（16秒）</option>
+                <option value="8">快（8秒）</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">安和分校跑馬燈訊息</label>
+            <textarea
+              className="form-control"
+              rows={2}
+              value={form.marqueeMsgAnHe || ''}
+              onChange={(e) => updateField('marqueeMsgAnHe', e.target.value)}
+              placeholder="輸入安和分校要顯示的提醒訊息"
+            />
+            <label className="radio-label" style={{ marginTop: 6 }}>
+              <input
+                type="checkbox"
+                checked={!!form.marqueeEnabledAnHe}
+                onChange={(e) => updateField('marqueeEnabledAnHe', e.target.checked)}
+              />
+              啟用安和分校跑馬燈
+            </label>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">安和分校跑馬燈顏色</label>
+              <input
+                className="form-control"
+                type="color"
+                value={form.marqueeColorAnHe || '#166534'}
+                onChange={(e) => updateField('marqueeColorAnHe', e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">安和分校跑馬燈速度</label>
+              <select
+                className="form-control"
+                value={form.marqueeSpeedAnHe || '16'}
+                onChange={(e) => updateField('marqueeSpeedAnHe', e.target.value)}
+              >
+                <option value="24">慢（24秒）</option>
+                <option value="16">中（16秒）</option>
+                <option value="8">快（8秒）</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">大直分校跑馬燈訊息</label>
+            <textarea
+              className="form-control"
+              rows={2}
+              value={form.marqueeMsgDaZhi || ''}
+              onChange={(e) => updateField('marqueeMsgDaZhi', e.target.value)}
+              placeholder="輸入大直分校要顯示的提醒訊息"
+            />
+            <label className="radio-label" style={{ marginTop: 6 }}>
+              <input
+                type="checkbox"
+                checked={!!form.marqueeEnabledDaZhi}
+                onChange={(e) => updateField('marqueeEnabledDaZhi', e.target.checked)}
+              />
+              啟用大直分校跑馬燈
+            </label>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">大直分校跑馬燈顏色</label>
+              <input
+                className="form-control"
+                type="color"
+                value={form.marqueeColorDaZhi || '#166534'}
+                onChange={(e) => updateField('marqueeColorDaZhi', e.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">大直分校跑馬燈速度</label>
+              <select
+                className="form-control"
+                value={form.marqueeSpeedDaZhi || '16'}
+                onChange={(e) => updateField('marqueeSpeedDaZhi', e.target.value)}
+              >
+                <option value="24">慢（24秒）</option>
+                <option value="16">中（16秒）</option>
+                <option value="8">快（8秒）</option>
+              </select>
+            </div>
+          </div>
+
           <div className="confirm-action-row modal-inline-actions">
             <span className="confirm-saved-msg modal-msg">{msg}</span>
             <button className="btn btn-primary" disabled={saving} onClick={handleSave}>

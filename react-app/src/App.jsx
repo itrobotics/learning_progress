@@ -33,6 +33,14 @@ function parsePositiveInt(v, fallback) {
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback
 }
 
+function parseBooleanSetting(v, fallback = false) {
+  if (typeof v === 'boolean') return v
+  const normalized = String(v ?? '').trim().toLowerCase()
+  if (normalized === 'true' || normalized === '1' || normalized === 'yes') return true
+  if (normalized === 'false' || normalized === '0' || normalized === 'no' || normalized === '') return false
+  return fallback
+}
+
 function normalizeTermDate(v, fallback) {
   const s = String(v || '').trim()
   if (!s) return fallback
@@ -76,6 +84,27 @@ function applySystemSettings(raw = {}) {
       raw.scheduleLoadFutureDays,
       APP_SETTINGS_DEFAULT.scheduleLoadFutureDays
     ),
+    marqueeMsgYanShou: String(raw.marqueeMsgYanShou || ''),
+    marqueeEnabledYanShou: parseBooleanSetting(
+      raw.marqueeEnabledYanShou,
+      APP_SETTINGS_DEFAULT.marqueeEnabledYanShou
+    ),
+    marqueeColorYanShou: String(raw.marqueeColorYanShou || APP_SETTINGS_DEFAULT.marqueeColorYanShou),
+    marqueeSpeedYanShou: parsePositiveInt(raw.marqueeSpeedYanShou, APP_SETTINGS_DEFAULT.marqueeSpeedYanShou),
+    marqueeMsgAnHe: String(raw.marqueeMsgAnHe || ''),
+    marqueeEnabledAnHe: parseBooleanSetting(
+      raw.marqueeEnabledAnHe,
+      APP_SETTINGS_DEFAULT.marqueeEnabledAnHe
+    ),
+    marqueeColorAnHe: String(raw.marqueeColorAnHe || APP_SETTINGS_DEFAULT.marqueeColorAnHe),
+    marqueeSpeedAnHe: parsePositiveInt(raw.marqueeSpeedAnHe, APP_SETTINGS_DEFAULT.marqueeSpeedAnHe),
+    marqueeMsgDaZhi: String(raw.marqueeMsgDaZhi || ''),
+    marqueeEnabledDaZhi: parseBooleanSetting(
+      raw.marqueeEnabledDaZhi,
+      APP_SETTINGS_DEFAULT.marqueeEnabledDaZhi
+    ),
+    marqueeColorDaZhi: String(raw.marqueeColorDaZhi || APP_SETTINGS_DEFAULT.marqueeColorDaZhi),
+    marqueeSpeedDaZhi: parsePositiveInt(raw.marqueeSpeedDaZhi, APP_SETTINGS_DEFAULT.marqueeSpeedDaZhi),
   }
 }
 
@@ -424,6 +453,31 @@ function App() {
     : '選擇學生'
   const mobileModuleLabel = activeModule === 'schedule' ? '學習進度' : '訂購總覽'
   const mobileDrawerSummary = `${currentBranch}｜${mobileModuleLabel}｜${mobileStudentLabel}`
+
+  const currentMarquee = useMemo(() => {
+    if (currentBranch === '延壽') {
+      return {
+        enabled: !!settings.marqueeEnabledYanShou,
+        message: String(settings.marqueeMsgYanShou || '').trim(),
+        color: String(settings.marqueeColorYanShou || '#166534'),
+        speed: Number(settings.marqueeSpeedYanShou || 16),
+      }
+    }
+    if (currentBranch === '安和') {
+      return {
+        enabled: !!settings.marqueeEnabledAnHe,
+        message: String(settings.marqueeMsgAnHe || '').trim(),
+        color: String(settings.marqueeColorAnHe || '#166534'),
+        speed: Number(settings.marqueeSpeedAnHe || 16),
+      }
+    }
+    return {
+      enabled: !!settings.marqueeEnabledDaZhi,
+      message: String(settings.marqueeMsgDaZhi || '').trim(),
+      color: String(settings.marqueeColorDaZhi || '#166534'),
+      speed: Number(settings.marqueeSpeedDaZhi || 16),
+    }
+  }, [currentBranch, settings])
 
   const orderFilters = useMemo(
     () => ({
@@ -1052,6 +1106,21 @@ function App() {
         mobileDrawerOpen={mobileSidebarOpen}
         onToggleMobileDrawer={handleToggleMobileDrawer}
       />
+
+      {currentMarquee.enabled && currentMarquee.message ? (
+        <div className="branch-marquee-wrap" title={`${currentBranch}分校公告`}>
+          <div
+            className="branch-marquee-track"
+            style={{
+              color: currentMarquee.color,
+              animationDuration: `${currentMarquee.speed}s`,
+            }}
+          >
+            <span>{currentMarquee.message}</span>
+            <span aria-hidden="true">{currentMarquee.message}</span>
+          </div>
+        </div>
+      ) : null}
 
       <div
         className={`mobile-drawer-backdrop ${mobileSidebarOpen ? 'open' : ''}`}

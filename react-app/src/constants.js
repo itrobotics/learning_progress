@@ -11,6 +11,18 @@ export const APP_SETTINGS_DEFAULT = {
   bookAlertDays: 30,
   scheduleLoadPastDays: 30,
   scheduleLoadFutureDays: 60,
+  marqueeMsgYanShou: '',
+  marqueeEnabledYanShou: false,
+  marqueeColorYanShou: '#166534',
+  marqueeSpeedYanShou: 16,
+  marqueeMsgAnHe: '',
+  marqueeEnabledAnHe: false,
+  marqueeColorAnHe: '#166534',
+  marqueeSpeedAnHe: 16,
+  marqueeMsgDaZhi: '',
+  marqueeEnabledDaZhi: false,
+  marqueeColorDaZhi: '#166534',
+  marqueeSpeedDaZhi: 16,
 }
 
 export const RANGES = {

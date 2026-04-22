@@ -11,10 +11,22 @@ const DEFAULT_SETTINGS = {
   orderAlertGapK: '4',
   bookAlertDays: '30',
   scheduleLoadPastDays: '30',
-  scheduleLoadFutureDays: '60'
+  scheduleLoadFutureDays: '60',
+  marqueeMsgYanShou: '',
+  marqueeEnabledYanShou: 'false',
+  marqueeColorYanShou: '#166534',
+  marqueeSpeedYanShou: '16',
+  marqueeMsgAnHe: '',
+  marqueeEnabledAnHe: 'false',
+  marqueeColorAnHe: '#166534',
+  marqueeSpeedAnHe: '16',
+  marqueeMsgDaZhi: '',
+  marqueeEnabledDaZhi: 'false',
+  marqueeColorDaZhi: '#166534',
+  marqueeSpeedDaZhi: '16'
 };
 
-const STUDENT_REQUIRED_COLUMNS = ['orderAlertGapKByPerson'];
+const STUDENT_REQUIRED_COLUMNS = ['orderAlertGapKByPerson', 'note'];
 const SCHEDULE_REQUIRED_COLUMNS = ['rowId'];
 
 function normalizeProgressStatus_(st) {
@@ -110,6 +122,18 @@ function normalizeSettingKey_(k) {
     bookalertdays: 'bookAlertDays',
     scheduleloadpastdays: 'scheduleLoadPastDays',
     scheduleloadfuturedays: 'scheduleLoadFutureDays',
+    marqueemsgyanshou: 'marqueeMsgYanShou',
+    marqueeenabledyanshou: 'marqueeEnabledYanShou',
+    marqueecoloryanshou: 'marqueeColorYanShou',
+    marqueespeedyanshou: 'marqueeSpeedYanShou',
+    marqueemsganhe: 'marqueeMsgAnHe',
+    marqueeenabledanhe: 'marqueeEnabledAnHe',
+    marqueecoloranhe: 'marqueeColorAnHe',
+    marqueespeedanhe: 'marqueeSpeedAnHe',
+    marqueemsgdazhi: 'marqueeMsgDaZhi',
+    marqueeenableddazhi: 'marqueeEnabledDaZhi',
+    marqueecolordazhi: 'marqueeColorDaZhi',
+    marqueespeeddazhi: 'marqueeSpeedDaZhi',
     '時數不足預警數量': 'lowHoursThreshold',
     '新套書預警天數': 'bookAlertDays'
   };
@@ -314,11 +338,36 @@ function normalizeSettingValue_(key, value) {
     key === 'orderAlertGapK' ||
     key === 'bookAlertDays' ||
     key === 'scheduleLoadPastDays' ||
-    key === 'scheduleLoadFutureDays'
+    key === 'scheduleLoadFutureDays' ||
+    key === 'marqueeSpeedYanShou' ||
+    key === 'marqueeSpeedAnHe' ||
+    key === 'marqueeSpeedDaZhi'
   ) {
     const n = Number(raw);
     if (!Number.isFinite(n) || n <= 0) throw new Error(`${key} 需為大於 0 的數字`);
     return String(Math.floor(n));
+  }
+
+  if (
+    key === 'marqueeEnabledYanShou' ||
+    key === 'marqueeEnabledAnHe' ||
+    key === 'marqueeEnabledDaZhi'
+  ) {
+    const normalized = String(raw).trim().toLowerCase();
+    if (normalized === 'true' || normalized === '1' || normalized === 'yes') return 'true';
+    if (normalized === 'false' || normalized === '0' || normalized === 'no' || normalized === '') return 'false';
+    throw new Error(`${key} 需為 true 或 false`);
+  }
+
+  if (
+    key === 'marqueeColorYanShou' ||
+    key === 'marqueeColorAnHe' ||
+    key === 'marqueeColorDaZhi'
+  ) {
+    if (raw && !raw.match(/^#[0-9A-Fa-f]{6}$/)) {
+      throw new Error(`${key} 格式需為 #RRGGBB`);
+    }
+    return raw || '#166534';
   }
 
   return raw;
@@ -560,6 +609,7 @@ function getStudents(branch) {
       obj.orderAlertGapKByPerson !== undefined ? obj.orderAlertGapKByPerson :
       (obj.orderAlertGapK_byperson !== undefined ? obj.orderAlertGapK_byperson : obj.orderAlertGapK_byperseon);
     obj.orderAlertGapKByPerson = Number(personalGapRaw || 0);
+    obj.note = String(obj.note || '').trim();
 
     result.push(obj);
   }
@@ -820,6 +870,7 @@ function buildStudentPayload_(data) {
     confirmedHours,
     school: String(data.school || data.elementarySchool || data.schoolName || '').trim(),
     elementarySchool: String(data.elementarySchool || data.school || data.schoolName || '').trim(),
+    note: String(data.note || '').trim(),
     orderAlertGapKByPerson: Number(data.orderAlertGapKByPerson || 0),
     mon: Number(data.mon || 0),
     tue: Number(data.tue || 0),

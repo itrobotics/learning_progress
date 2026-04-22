@@ -21,6 +21,7 @@ function buildInitialForm(student, currentBranch, defaultOrderAlertGapK = 0) {
       hasStudent ? student?.orderAlertGapKByPerson || 0 : defaultOrderAlertGapK || 0
     ),
     school: String(student?.school || student?.elementarySchool || student?.schoolName || '').trim(),
+    note: String(student?.note || '').trim(),
     schedule: Array.isArray(student?.schedule)
       ? student.schedule.map((hours) => Number(hours || 0))
       : [0, 0, 0, 0, 0, 0, 0],
@@ -100,6 +101,7 @@ function StudentManageModal({
       orderAlertGapKByPerson: Number(form.orderAlertGapKByPerson || 0),
       school: String(form.school || '').trim(),
       elementarySchool: String(form.school || '').trim(),
+      note: String(form.note || '').trim(),
       mon: Number(form.schedule?.[0] || 0),
       tue: Number(form.schedule?.[1] || 0),
       wed: Number(form.schedule?.[2] || 0),
@@ -129,7 +131,7 @@ function StudentManageModal({
       return
     }
 
-    if (payload.currentRemainingHours < 0 || payload.initHours < 0) {
+    if (!isEdit && (payload.currentRemainingHours < 0 || payload.initHours < 0)) {
       setErrorMsg('時數不可為負數')
       return
     }
@@ -228,6 +230,18 @@ function StudentManageModal({
                 onChange={(e) => updateField('school', e.target.value)}
               />
             </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">備註</label>
+            <textarea
+              className="form-control"
+              rows={3}
+              value={form.note}
+              disabled={saving}
+              onChange={(e) => updateField('note', e.target.value)}
+              placeholder="可填寫該學生應注意事項"
+            />
           </div>
 
           <div className="section-title modal-section-gap">學習設定</div>

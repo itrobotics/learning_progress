@@ -265,6 +265,12 @@ function StudentDetailPanel({
             ) : (
               '未設定'
             )}
+            {String(selectedStudent.note || '').trim() ? (
+              <>
+                <br />
+                備註：{String(selectedStudent.note || '').trim()}
+              </>
+            ) : null}
           </div>
         </div>
 
