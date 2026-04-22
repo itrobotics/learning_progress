@@ -941,7 +941,8 @@ function updateStudent(data) {
       sh.getRange(i + 1, 1, 1, headers.length).setValues([nextRow]);
       SpreadsheetApp.flush();
     }
-    return {success: true};
+    const student = getStudents('').filter(s => String(s.id || '').trim() === data.id)[0];
+    return {success: true, student: student || null};
   }
   return {error: 'student not found: ' + data.id};
 }

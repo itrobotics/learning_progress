@@ -973,17 +973,28 @@ function App() {
     try {
       setStudentManageSaving(true)
 
+      let result
       if (mode === 'edit') {
-        await updateStudent(payload)
+        result = await updateStudent(payload)
       } else {
-        await addStudentApi(payload)
+        result = await addStudentApi(payload)
       }
 
       setCurrentBranch(payload.branch || currentBranch)
       setSelectedId(payload.id)
       setStudentManageOpen(false)
       setStudentManageTarget(null)
-      setRefreshKey((prev) => prev + 1)
+
+      // 方案 A：使用後端回傳的學生資料直接更新，避免重新載入整個列表
+      if (mode === 'edit' && result?.student) {
+        setStudents((prev) =>
+          prev.map((s) => (s.id === result.student.id ? { ...s, ...result.student } : s))
+        )
+      } else {
+        // 新增模式或後端未回傳學生資料時，仍需重新載入
+        setRefreshKey((prev) => prev + 1)
+      }
+
       return { ok: true }
     } catch (error) {
       return { ok: false, message: error.message || '學生資料儲存失敗' }
