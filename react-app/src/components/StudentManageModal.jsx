@@ -12,7 +12,7 @@ function buildInitialForm(student, currentBranch, defaultOrderAlertGapK = 0) {
     name: String(student?.name || '').trim(),
     branch: String(student?.branch || currentBranch || BRANCHES[0] || '').trim(),
     level: String(student?.level || 'GK').trim() || 'GK',
-    grade: Number(student?.grade || 1),
+    grade: Number(student?.grade ?? 0),
     speed: Number(student?.speed || 1),
     confirmedNo: Number(student?.confirmedNo ?? 1),
     currentRemainingHours: Number(student?.currentRemainingHours ?? student?.confirmedHours ?? initialPurchasedHours),
@@ -92,7 +92,7 @@ function StudentManageModal({
       name: String(form.name || '').trim(),
       branch: String(form.branch || '').trim(),
       level: String(form.level || 'GK').trim() || 'GK',
-      grade: Number(form.grade || 1),
+      grade: Number(form.grade ?? 0),
       speed: Number(form.speed || 1),
       confirmedNo: Number(form.confirmedNo),
       currentRemainingHours: Number(form.currentRemainingHours || 0),
@@ -270,7 +270,7 @@ function StudentManageModal({
                 disabled={saving}
                 onChange={(e) => updateField('grade', Number(e.target.value))}
               >
-                {[1, 2, 3, 4, 5, 6].map((grade) => (
+                {[0, 1, 2, 3, 4, 5, 6].map((grade) => (
                   <option key={grade} value={grade}>
                     {grade}
                   </option>

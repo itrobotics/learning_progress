@@ -704,6 +704,38 @@ function App() {
     const student = students.find((item) => item.id === payload.studentId)
     if (!student) return { ok: false, message: '找不到學生資料' }
 
+    const forceInStockBooks = Array.from(
+      new Set((payload.forceInStockBooks || []).map((book) => String(book || '').trim().toUpperCase()))
+    ).filter(Boolean)
+
+    if (forceInStockBooks.length) {
+      const forceEntries = forceInStockBooks.map((bookCode) => ({
+        bookCode,
+        state: 'inStock',
+      }))
+
+      try {
+        await saveBookOrderStates({
+          studentId: payload.studentId,
+          entries: forceEntries,
+          operator: '主任',
+        })
+
+        applyBookOrderEntriesLocal(payload.studentId, forceEntries)
+
+        const nowStr = nowTWDateTimeString()
+        setBookOrderUpdatedAtMap((prev) => {
+          const next = { ...prev }
+          forceInStockBooks.forEach((code) => {
+            next[`${payload.studentId}__${code}`] = nowStr
+          })
+          return next
+        })
+      } catch (error) {
+        return { ok: false, message: error.message || '自動轉為 inStock 失敗，無法確認進度' }
+      }
+    }
+
     const targetIndex = payload.rowId
       ? (student.scheduleTable || []).findIndex((row) => row.rowId === payload.rowId)
       : Number(payload.rowIndex)

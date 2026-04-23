@@ -77,6 +77,11 @@ export function buildOrderSummaryData({
     const setInfo = bookCodeToSet(bookCode)
     if (!setInfo) return
 
+    // 僅保留目前仍屬於「需要套書」窗口的 needOrder，避免顯示過期採購訊號
+    const activeAlertSetCodes = new Set(student.bookAlertSetCodes || [])
+    if (activeAlertSetCodes.size && !activeAlertSetCodes.has(setInfo.setKey)) return
+    if (!activeAlertSetCodes.size) return
+
     if (!setMap[setInfo.setKey]) {
       setMap[setInfo.setKey] = {
         setInfo,

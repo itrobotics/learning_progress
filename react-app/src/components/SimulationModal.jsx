@@ -289,7 +289,7 @@ function SimulationModal({
                   value={form.grade}
                   onChange={(e) => updateField('grade', Number(e.target.value))}
                 >
-                  {[1, 2, 3, 4, 5, 6].map((grade) => (
+                  {[0, 1, 2, 3, 4, 5, 6].map((grade) => (
                     <option key={grade} value={grade}>
                       {grade}
                     </option>

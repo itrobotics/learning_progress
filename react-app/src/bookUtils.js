@@ -161,8 +161,8 @@ export function validateMPMBook(book, options = {}) {
     ],
   }
 
-  if (grade < 1 || grade > 6) {
-    return { valid: false, normalized: b, reason: `年級需為 1~6（收到 ${grade}）` }
+  if (grade < 0 || grade > 6) {
+    return { valid: false, normalized: b, reason: `年級需為 0~6（收到 ${grade}）` }
   }
 
   if (!ranges[level].some(([s, e]) => no >= s && no <= e)) {
@@ -177,7 +177,12 @@ export function validateMPMBook(book, options = {}) {
     return { valid: false, normalized: b, reason: `Level 需為 ${options.expectedLevel}` }
   }
 
-  if (options.expectedGrade && grade !== Number(options.expectedGrade)) {
+  if (
+    options.expectedGrade !== undefined &&
+    options.expectedGrade !== null &&
+    String(options.expectedGrade).trim() !== '' &&
+    grade !== Number(options.expectedGrade)
+  ) {
     return { valid: false, normalized: b, reason: `年級需為 ${options.expectedGrade}` }
   }
 

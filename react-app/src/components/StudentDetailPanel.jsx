@@ -198,19 +198,37 @@ function StudentDetailPanel({
       return
     }
 
+    const nonInStockBooks = books.filter(
+      (book) => (bookOrderStateMap?.[`${selectedStudent.id}__${book}`] || '') !== 'inStock'
+    )
+
+    if (nonInStockBooks.length) {
+      const shouldForceInStock = window.confirm(
+        `以下書號目前不是 inStock：\n${nonInStockBooks.join(', ')}\n\n是否要先自動改成 inStock，再執行確認進度？`
+      )
+      if (!shouldForceInStock) {
+        return
+      }
+    }
+
     setConfirmError('')
 
     if (!onConfirmRow) return
 
-    await onConfirmRow({
+    const result = await onConfirmRow({
       studentId: selectedStudent.id,
       rowId: nextPendingRow.rowId,
       rowIndex: selectedStudent.scheduleTable.findIndex((row) => row.rowId === nextPendingRow.rowId),
       status: confirmStatus,
       note: confirmNote.trim(),
       books,
+      forceInStockBooks: nonInStockBooks,
       hours,
     })
+
+    if (!result?.ok) {
+      setConfirmError(result?.message || '確認失敗')
+    }
   }
 
   async function handleAdjustHours() {

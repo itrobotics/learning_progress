@@ -261,7 +261,7 @@ function LearningMatrix({
             </tr>
           </thead>
           <tbody>
-            {Array.from({ length: 6 }, (_, index) => index + 1).map((grade) => (
+            {Array.from({ length: 7 }, (_, index) => index).map((grade) => (
               <tr key={grade}>
                 <td className="history-grade sticky-col">{grade}</td>
                 {Array.from({ length: maxNo }, (_, index) => index + 1).map((no) => {

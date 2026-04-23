@@ -849,6 +849,10 @@ function saveSchedule(data) {
 
 function buildStudentPayload_(data) {
   const studentId = String(data.id || '').trim();
+  const gradeValue =
+    data.grade !== undefined && data.grade !== null && data.grade !== ''
+      ? Number(data.grade)
+      : 0;
   const currentRemainingHours =
     data.currentRemainingHours !== undefined
       ? Number(data.currentRemainingHours || 0)
@@ -862,7 +866,7 @@ function buildStudentPayload_(data) {
     name: String(data.name || '').trim(),
     branch: String(data.branch || '').trim(),
     level: String(data.level || 'GK').trim() || 'GK',
-    grade: Number(data.grade || 1),
+    grade: Number.isFinite(gradeValue) ? gradeValue : 0,
     speed: Number(data.speed || 1),
     confirmedNo: Number(data.confirmedNo || data.startNo || 1),
     initHours,
