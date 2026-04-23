@@ -114,6 +114,14 @@
 
 ## 5.6 自動清理規則
 - 若某套「現在不用買」，該套內原本 `needOrder` 需清成空值 `''`
+- 「現在不用買」的判斷基準為：該套不在目前有效的 `bookAlertSetCodes`（即已脫離當前 K window 需求）
+- 此清理為**實際清理**（需同步寫回 `book_order_state`），不是只在 UI 隱藏
+
+### 5.6.1 實際清理案例（避免過期待訂殘留）
+- 例：僅排定 `GK101~GK103`，曾按「訂購此套」導致 `GK101~GK108` 被標記 `needOrder`
+- 當 `GK101~GK103` 已確認且該套不再屬於有效需求時：
+  - `GK104~GK108` 的舊 `needOrder` 也必須在同步時清為 `''`
+  - 避免「待訂套書總覽」持續顯示已過期採購訊號
 
 ## 5.7 不可自動改動
 - `inStock` 僅可由人工點格改變
@@ -143,6 +151,20 @@
   - 直接掃 `bookOrderStateMap` 中該學生所有 key
   - `needOrder/inStock` 一律送出
   - 曾存在於 Sheet 但本地已清空者，送出 `state=''` 清理
+  - 針對「已不在 `bookAlertSetCodes` 的舊 `needOrder`」也必須送出 `state=''` 做實際清理
+
+## 6.2.1 同步後一致性要求
+- 同步成功後，`book_order_state` 分頁、`bookOrderStateMap`、待訂套書總覽三者需一致
+- 不得存在「Sheet 仍是 `needOrder`，但實際需求已失效」的殘留狀態
+
+---
+
+## 6.8 教材查詢語意（某學生、某日期）
+- 查詢「某學生在什麼日期用哪些教材」時，資料來源為學習進度表（`scheduleTable`）
+- 狀態語意分層：
+  - `match / behind / ahead`：已確認（實際發生）
+  - `pending`：未確認（預計）
+- 預設查詢口徑應以「已確認」為主；若需預排資訊，可切換顯示 `pending`
 
 ## 6.3 同步期間鎖定
 - 在 API 返回前，以下元件一律 disabled：

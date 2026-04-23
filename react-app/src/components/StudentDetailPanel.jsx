@@ -59,6 +59,9 @@ function StudentDetailPanel({
   onConfirmRow,
   onAdjustHours,
   scheduleLoading,
+  onRefreshPanelData,
+  panelRefreshing,
+  panelRefreshMsg,
 }) {
   const [schedulePage, setSchedulePage] = useState(1)
   const [confirmStatus, setConfirmStatus] = useState('')
@@ -514,6 +517,13 @@ function StudentDetailPanel({
           <div className="pager-row">
             <button
               className="btn btn-outline btn-sm"
+              disabled={!!panelRefreshing}
+              onClick={() => onRefreshPanelData?.(selectedStudent.id)}
+            >
+              {panelRefreshing ? '更新中…' : '更新'}
+            </button>
+            <button
+              className="btn btn-outline btn-sm"
               disabled={currentPage <= 1}
               onClick={() => setSchedulePage((prev) => Math.max(1, prev - 1))}
             >
@@ -528,6 +538,8 @@ function StudentDetailPanel({
             </button>
           </div>
         </div>
+
+        {panelRefreshMsg ? <div className="section-sub">{panelRefreshMsg}</div> : null}
 
         {showScheduleLoading ? (
           <div className="empty-block">

@@ -812,8 +812,10 @@ function saveSchedule(data) {
 
     const incoming = data.rows || [];
     const newRows = incoming
-      .filter(r => normalizeProgressStatus_(r.status) === 'pending')
-      .map(r => {
+      .map((r, idx) => ({ r, idx }))
+      .filter(item => normalizeProgressStatus_(item.r.status) === 'pending')
+      .map(item => {
+        const r = item.r;
         const booksStr = Array.isArray(r.books) ? r.books.join(',') : r.books;
         const rowObj = {
           studentId: r.studentId,
@@ -825,8 +827,18 @@ function saveSchedule(data) {
           confirmedAt: r.confirmedAt ? fmtDateTime(r.confirmedAt) : '',
           rowId: r.rowId || generateRowId_()
         };
-        return headers.map(h => rowObj[h] !== undefined ? rowObj[h] : '');
-      });
+        return {
+          values: headers.map(h => rowObj[h] !== undefined ? rowObj[h] : ''),
+          date: fmtDateOnly(r.date),
+          inputOrder: item.idx
+        };
+      })
+      // 一次 append 多筆時，僅針對本次新增列做日期升冪，避免同學生新列在 Sheet 中亂序
+      .sort((a, b) => {
+        if (a.date !== b.date) return a.date > b.date ? 1 : -1;
+        return a.inputOrder - b.inputOrder;
+      })
+      .map(item => item.values);
 
     const finalRows = keptRows.concat(newRows);
 

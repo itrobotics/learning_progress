@@ -269,6 +269,8 @@ function App() {
   const [matrixScopeState, setMatrixScopeState] = useState({})
   const [studentSyncLockMap, setStudentSyncLockMap] = useState({})
   const [studentSyncMsgMap, setStudentSyncMsgMap] = useState({})
+  const [studentPanelRefreshLockMap, setStudentPanelRefreshLockMap] = useState({})
+  const [studentPanelRefreshMsgMap, setStudentPanelRefreshMsgMap] = useState({})
   const [simulationStudent, setSimulationStudent] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [studentManageOpen, setStudentManageOpen] = useState(false)
@@ -957,7 +959,8 @@ function App() {
         })
       )
 
-      const scheduleWindow = getScheduleLoadWindow(settings)
+      const replaceStartDate = nowTWDateTimeString().substring(0, 10)
+      const replaceEndDate = ''
 
       await Promise.all([
         updateStudent({
@@ -980,8 +983,8 @@ function App() {
         saveSchedule({
           studentId,
           today: nowTWDateTimeString().substring(0, 10),
-          replaceStartDate: scheduleWindow.startDate,
-          replaceEndDate: scheduleWindow.endDate,
+          replaceStartDate,
+          replaceEndDate,
           rows: scheduleTable.map((row) => ({
             rowId: row.rowId || '',
             studentId,
@@ -1070,13 +1073,124 @@ function App() {
     })
   }
 
-  async function handleSyncMatrix(studentId) {
-    const entries = Object.entries(bookOrderStateMap)
-      .filter(([key, state]) => key.startsWith(`${studentId}__`) && (state === 'needOrder' || state === 'inStock'))
-      .map(([key, state]) => ({
-        bookCode: key.split('__')[1],
-        state,
+  async function handleRefreshStudentData(studentId) {
+    if (!studentId) return
+
+    const { startDate, endDate } = getScheduleLoadWindow(settings)
+
+    setStudentPanelRefreshLockMap((prev) => ({ ...prev, [studentId]: true }))
+    setStudentPanelRefreshMsgMap((prev) => ({ ...prev, [studentId]: '⏳ 更新中…' }))
+    setStudents((prev) =>
+      prev.map((item) =>
+        item.id === studentId
+          ? {
+              ...item,
+              scheduleLoading: true,
+            }
+          : item
+      )
+    )
+
+    try {
+      const [scheduleRes, bookOrderRes] = await Promise.all([
+        fetchSchedule(studentId, startDate, endDate),
+        fetchBookOrderStates(),
+      ])
+
+      const nextBookOrderStateMap = {}
+      const nextBookOrderUpdatedAtMap = {}
+      ;(bookOrderRes?.rows || []).forEach((r) => {
+        const sid = String(r.studentId || '').trim()
+        const code = String(r.bookCode || '').trim().toUpperCase()
+        const st = String(r.state || '').trim()
+        if (!sid || !code) return
+        if (st !== 'needOrder' && st !== 'inStock') return
+        const key = `${sid}__${code}`
+        nextBookOrderStateMap[key] = st
+        nextBookOrderUpdatedAtMap[key] = String(r.updatedAt || '').trim()
+      })
+
+      setBookOrderStateMap(nextBookOrderStateMap)
+      setBookOrderUpdatedAtMap(nextBookOrderUpdatedAtMap)
+
+      const scheduleTable = normalizeScheduleRows(scheduleRes?.rows || [])
+      setStudents((prev) =>
+        prev.map((item) =>
+          item.id === studentId
+            ? {
+                ...item,
+                scheduleTable,
+                scheduleLoaded: true,
+                scheduleLoading: false,
+                loadedScheduleStartDate: startDate,
+                loadedScheduleEndDate: endDate,
+              }
+            : item
+        )
+      )
+
+      setStudentPanelRefreshMsgMap((prev) => ({ ...prev, [studentId]: '✅ 已更新' }))
+    } catch (error) {
+      setStudents((prev) =>
+        prev.map((item) =>
+          item.id === studentId
+            ? {
+                ...item,
+                scheduleLoading: false,
+              }
+            : item
+        )
+      )
+      setStudentPanelRefreshMsgMap((prev) => ({
+        ...prev,
+        [studentId]: `⚠ 更新失敗：${error.message || '未知錯誤'}`,
       }))
+    } finally {
+      setStudentPanelRefreshLockMap((prev) => ({ ...prev, [studentId]: false }))
+    }
+  }
+
+  async function handleSyncMatrix(studentId) {
+    const student = enrichedStudents.find((item) => item.id === studentId)
+    const activeAlertSetCodes = new Set(student?.bookAlertSetCodes || [])
+
+    const existingCodesInSheet = new Set(
+      Object.keys(bookOrderUpdatedAtMap)
+        .filter((key) => key.startsWith(`${studentId}__`))
+        .map((key) => key.split('__')[1])
+        .filter(Boolean)
+    )
+
+    const currentStateCodes = Object.keys(bookOrderStateMap)
+      .filter((key) => key.startsWith(`${studentId}__`))
+      .map((key) => key.split('__')[1])
+      .filter(Boolean)
+
+    const candidateCodes = new Set([...existingCodesInSheet, ...currentStateCodes])
+
+    const entries = Array.from(candidateCodes)
+      .map((bookCode) => {
+        const code = String(bookCode || '').trim().toUpperCase()
+        if (!code) return null
+
+        const key = `${studentId}__${code}`
+        const currentState = String(bookOrderStateMap[key] || '').trim()
+
+        if (currentState === 'inStock') {
+          return { bookCode: code, state: 'inStock' }
+        }
+
+        if (currentState === 'needOrder') {
+          const setKey = bookCodeToSet(code)?.setKey || ''
+          if (setKey && !activeAlertSetCodes.has(setKey)) {
+            return { bookCode: code, state: '' }
+          }
+          return { bookCode: code, state: 'needOrder' }
+        }
+
+        return { bookCode: code, state: '' }
+      })
+      .filter(Boolean)
 
     if (!entries.length) {
       setStudentSyncMsgMap((prev) => ({ ...prev, [studentId]: 'ℹ 無可同步書號' }))
@@ -1093,13 +1207,20 @@ function App() {
         operator: '主任',
       })
 
+      applyBookOrderEntriesLocal(studentId, entries)
+
       const nowStr = nowTWDateTimeString()
       setBookOrderUpdatedAtMap((prev) => {
         const next = { ...prev }
         entries.forEach((entry) => {
           const code = String(entry.bookCode || '').trim().toUpperCase()
           if (!code) return
-          next[`${studentId}__${code}`] = nowStr
+          const key = `${studentId}__${code}`
+          if (entry.state === 'needOrder' || entry.state === 'inStock') {
+            next[key] = nowStr
+          } else {
+            delete next[key]
+          }
         })
         return next
       })
@@ -1311,6 +1432,9 @@ function App() {
                 onConfirmRow={handleConfirmRow}
                 onAdjustHours={handleAdjustHours}
                 scheduleLoading={!!selectedStudent?.scheduleLoading}
+                onRefreshPanelData={handleRefreshStudentData}
+                panelRefreshing={!!studentPanelRefreshLockMap[selectedId]}
+                panelRefreshMsg={studentPanelRefreshMsgMap[selectedId] || ''}
               />
             </>
           ) : (
