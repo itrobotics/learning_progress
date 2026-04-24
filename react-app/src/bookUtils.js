@@ -94,8 +94,9 @@ export function getLegalNoSet(level) {
 }
 
 export function getLevelMaxNo(level) {
-  if (level === 'GV') return 88
-  return 80
+  const ranges = RANGES[level] || []
+  if (!ranges.length) return 0
+  return Math.max(...ranges.map(([, end]) => Number(end) || 0))
 }
 
 export function getSetRangeByNo(no) {
@@ -144,28 +145,13 @@ export function validateMPMBook(book, options = {}) {
   const level = parsed.level
   const grade = parsed.grade
   const no = parsed.no
-  const ranges = {
-    GK: [
-      [1, 40],
-      [41, 80],
-    ],
-    GV: [
-      [1, 24],
-      [33, 56],
-      [65, 88],
-    ],
-    GA: [
-      [1, 24],
-      [33, 56],
-      [65, 80],
-    ],
-  }
+  const ranges = RANGES[level] || []
 
   if (grade < 0 || grade > 6) {
     return { valid: false, normalized: b, reason: `年級需為 0~6（收到 ${grade}）` }
   }
 
-  if (!ranges[level].some(([s, e]) => no >= s && no <= e)) {
+  if (!ranges.some(([s, e]) => no >= s && no <= e)) {
     return {
       valid: false,
       normalized: b,

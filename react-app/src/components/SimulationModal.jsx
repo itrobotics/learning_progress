@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { TODAY } from '../constants'
-import { formatBookTokenLabel, getMPMBooks } from '../bookUtils'
+import { formatBookTokenLabel, getLevelMaxNo, getMPMBooks } from '../bookUtils'
 
 function cloneSimRows(rows) {
   return (rows || []).map((row) => ({
@@ -305,7 +305,7 @@ function SimulationModal({
                   className="form-control"
                   type="number"
                   min="1"
-                  max="88"
+                  max={getLevelMaxNo(form.level)}
                   value={form.startNo}
                   onChange={(e) => updateField('startNo', Number(e.target.value))}
                 />

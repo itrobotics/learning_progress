@@ -13,27 +13,24 @@ export const APP_SETTINGS_DEFAULT = {
   scheduleLoadFutureDays: 60,
   marqueeMsgYanShou: '',
   marqueeEnabledYanShou: false,
-  marqueeColorYanShou: '#166534',
-  marqueeSpeedYanShou: 16,
   marqueeMsgAnHe: '',
   marqueeEnabledAnHe: false,
-  marqueeColorAnHe: '#166534',
-  marqueeSpeedAnHe: 16,
   marqueeMsgDaZhi: '',
   marqueeEnabledDaZhi: false,
-  marqueeColorDaZhi: '#166534',
-  marqueeSpeedDaZhi: 16,
 }
 
 export const RANGES = {
   GK: [
     [1, 40],
     [41, 80],
+    [81, 88],
+    [89, 96],
   ],
   GV: [
     [1, 24],
     [33, 56],
     [65, 88],
+    [89, 96],
   ],
   GA: [
     [1, 24],
