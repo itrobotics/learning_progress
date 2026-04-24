@@ -58,6 +58,7 @@ function StudentDetailPanel({
   onOpenStudentManage,
   onConfirmRow,
   onUndoConfirmRow,
+  onDeletePendingRow,
   onAdjustHours,
   scheduleLoading,
   onRefreshPanelData,
@@ -296,6 +297,14 @@ function StudentDetailPanel({
     return { show: true, allowed: true, reason: '' }
   }
 
+  function getDeleteMeta(row) {
+    const rowId = String(row?.rowId || '').trim()
+    if (!rowId) return { show: false, allowed: false, reason: '此列缺少 rowId，無法刪除' }
+    const status = normalizeProgressStatus(row?.status)
+    if (status !== 'pending') return { show: false, allowed: false, reason: '' }
+    return { show: true, allowed: true, reason: '' }
+  }
+
   async function handleUndoConfirm(row) {
     if (actionLocked) return
     const meta = getUndoMeta(row)
@@ -321,6 +330,35 @@ function StudentDetailPanel({
         return
       }
       setUndoMsg(`⚠ ${result?.message || '還原失敗'}`)
+    } finally {
+      setActionLocked(false)
+    }
+  }
+
+  async function handleDeletePending(row) {
+    if (actionLocked) return
+    const meta = getDeleteMeta(row)
+    if (!meta.allowed) {
+      setUndoMsg(`⚠ ${meta.reason || '此列無法刪除'}`)
+      return
+    }
+    if (!onDeletePendingRow) return
+
+    const ok = window.confirm('確定要刪除這筆待確認列嗎？\n此操作不會調整時數。')
+    if (!ok) return
+
+    setActionLocked(true)
+    try {
+      setUndoMsg('⏳ 刪除中，請稍候…')
+      const result = await onDeletePendingRow({
+        studentId: selectedStudent.id,
+        rowId: row.rowId,
+      })
+      if (result?.ok) {
+        setUndoMsg(`✅ ${result?.message || '已刪除待確認列'}`)
+        return
+      }
+      setUndoMsg(`⚠ ${result?.message || '刪除失敗'}`)
     } finally {
       setActionLocked(false)
     }
@@ -565,6 +603,13 @@ function StudentDetailPanel({
                 <button className="btn btn-success" disabled={actionLocked} onClick={handleConfirmSubmit}>
                   ✅ 確認
                 </button>
+                <button
+                  className="btn btn-outline"
+                  disabled={actionLocked || !nextPendingRow?.rowId}
+                  onClick={() => handleDeletePending(nextPendingRow)}
+                >
+                  🗑 刪除此列
+                </button>
               </div>
             </div>
           </>
@@ -682,7 +727,21 @@ function StudentDetailPanel({
                           </div>
                         </div>
 
-                        {getUndoMeta(row).show ? (
+                        {getDeleteMeta(row).show ? (
+                          <div className="schedule-mobile-field">
+                            <div className="schedule-mobile-field-label">操作</div>
+                            <div className="schedule-mobile-field-value">
+                              <button
+                                className="btn btn-outline btn-sm"
+                                disabled={actionLocked || !getDeleteMeta(row).allowed}
+                                title={getDeleteMeta(row).reason || ''}
+                                onClick={() => handleDeletePending(row)}
+                              >
+                                刪除待確認列
+                              </button>
+                            </div>
+                          </div>
+                        ) : getUndoMeta(row).show ? (
                           <div className="schedule-mobile-field">
                             <div className="schedule-mobile-field-label">操作</div>
                             <div className="schedule-mobile-field-value">
@@ -755,7 +814,16 @@ function StudentDetailPanel({
                         <td>{row.note || '—'}</td>
                         <td>{formatDateTimeForUI(row.confirmedAt)}</td>
                         <td>
-                          {getUndoMeta(row).show ? (
+                          {getDeleteMeta(row).show ? (
+                            <button
+                              className="btn btn-outline btn-sm"
+                              disabled={actionLocked || !getDeleteMeta(row).allowed}
+                              title={getDeleteMeta(row).reason || ''}
+                              onClick={() => handleDeletePending(row)}
+                            >
+                              刪除
+                            </button>
+                          ) : getUndoMeta(row).show ? (
                             <button
                               className="btn btn-outline btn-sm"
                               disabled={actionLocked || !getUndoMeta(row).allowed}

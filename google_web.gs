@@ -602,6 +602,7 @@ function doPost(e) {
     if (action === 'saveSchedule') return corsResponse(saveSchedule(data));
     if (action === 'confirmProgress') return corsResponse(confirmProgress(data));
     if (action === 'undoConfirmProgress') return corsResponse(undoConfirmProgress(data));
+    if (action === 'deletePendingProgressRow') return corsResponse(deletePendingProgressRow(data));
     if (action === 'adjustStudentHours') return corsResponse(adjustStudentHours(data));
     if (action === 'saveBookOrderStates') return corsResponse(saveBookOrderStates(data));
     if (action === 'addStudent') return corsResponse(addStudent(data));
@@ -722,6 +723,52 @@ function undoConfirmProgress(data) {
       beforeHours,
       afterHours
     };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function deletePendingProgressRow(data) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const studentId = String(data.studentId || '').trim();
+    const rowId = String(data.rowId || '').trim();
+    if (!studentId) return {error: 'studentId required'};
+    if (!rowId) return {error: 'rowId required'};
+
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const scheduleSh = ensureScheduleColumns_(ss) || ss.getSheetByName('學習進度表');
+    const rows = scheduleSh.getDataRange().getValues();
+    const headers = rows[0] || [];
+
+    const sidIdx = headers.indexOf('studentId');
+    const rowIdIdx = headers.indexOf('rowId');
+    const statusIdx = headers.indexOf('status');
+    if (sidIdx < 0 || rowIdIdx < 0 || statusIdx < 0) {
+      return {error: '學習進度表缺少必要欄位'};
+    }
+
+    let targetRow = -1;
+    for (let i = 1; i < rows.length; i++) {
+      const sid = String(rows[i][sidIdx] || '').trim();
+      const rid = String(rows[i][rowIdIdx] || '').trim();
+      if (sid === studentId && rid === rowId) {
+        targetRow = i + 1;
+        break;
+      }
+    }
+    if (targetRow < 0) return {error: '找不到要刪除的進度列'};
+
+    const row = rows[targetRow - 1];
+    const status = normalizeProgressStatus_(row[statusIdx]);
+    if (status !== 'pending') {
+      return {error: '僅允許刪除 pending 列'};
+    }
+
+    scheduleSh.deleteRow(targetRow);
+    SpreadsheetApp.flush();
+    return {success: true, studentId, rowId, deleted: true};
   } finally {
     lock.releaseLock();
   }

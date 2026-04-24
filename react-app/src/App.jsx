@@ -16,6 +16,7 @@ import {
   fetchSchedule,
   confirmProgress,
   undoConfirmProgress,
+  deletePendingProgressRow,
   adjustStudentHours,
   saveBookOrderStates,
   saveSchedule,
@@ -925,6 +926,62 @@ function App() {
     }
   }
 
+  async function handleDeletePendingRow(payload) {
+    const student = students.find((item) => item.id === payload.studentId)
+    if (!student) return { ok: false, message: '找不到學生資料' }
+
+    const targetIndex = (student.scheduleTable || []).findIndex((row) => row.rowId === payload.rowId)
+    if (targetIndex < 0) return { ok: false, message: '找不到要刪除的進度列' }
+
+    const existingRow = student.scheduleTable[targetIndex]
+    if (normalizeProgressStatus(existingRow.status) !== 'pending') {
+      return { ok: false, message: '僅允許刪除 pending 列' }
+    }
+
+    try {
+      await deletePendingProgressRow({
+        studentId: payload.studentId,
+        rowId: payload.rowId,
+      })
+
+      setStudents((prev) =>
+        prev.map((item) => {
+          if (item.id !== payload.studentId) return item
+          return {
+            ...item,
+            scheduleTable: (item.scheduleTable || []).filter((row) => row.rowId !== payload.rowId),
+          }
+        })
+      )
+
+      // 以後端資料為準再拉一次，避免前端快取顯示與 Sheet 不一致
+      try {
+        const { startDate, endDate } = getScheduleLoadWindow(settings)
+        const scheduleRes = await fetchSchedule(payload.studentId, startDate, endDate)
+        const refreshedScheduleTable = normalizeScheduleRows(scheduleRes?.rows || [])
+        setStudents((prev) =>
+          prev.map((item) =>
+            item.id === payload.studentId
+              ? {
+                  ...item,
+                  scheduleTable: refreshedScheduleTable,
+                  scheduleLoaded: true,
+                  loadedScheduleStartDate: startDate,
+                  loadedScheduleEndDate: endDate,
+                }
+              : item
+          )
+        )
+      } catch (reloadError) {
+        setErrorMsg(reloadError.message || '刪除後重新載入進度表失敗')
+      }
+
+      return { ok: true, message: '已刪除 pending 列' }
+    } catch (error) {
+      return { ok: false, message: error.message || '刪除失敗' }
+    }
+  }
+
   function handleRefresh() {
     setRefreshKey((prev) => prev + 1)
   }
@@ -1517,6 +1574,7 @@ function App() {
                 onOpenStudentManage={handleOpenEditStudent}
                 onConfirmRow={handleConfirmRow}
                 onUndoConfirmRow={handleUndoConfirmRow}
+                onDeletePendingRow={handleDeletePendingRow}
                 onAdjustHours={handleAdjustHours}
                 scheduleLoading={!!selectedStudent?.scheduleLoading}
                 onRefreshPanelData={handleRefreshStudentData}

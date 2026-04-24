@@ -108,6 +108,13 @@ export async function undoConfirmProgress(payload) {
   })
 }
 
+export async function deletePendingProgressRow(payload) {
+  return apiPost({
+    action: 'deletePendingProgressRow',
+    ...payload,
+  })
+}
+
 export async function adjustStudentHours(payload) {
   return apiPost({
     action: 'adjustStudentHours',
