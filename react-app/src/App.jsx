@@ -412,22 +412,31 @@ function App() {
   }, [students, settings.bookAlertDays])
 
   const filteredStudents = useMemo(() => {
-    return enrichedStudents.filter((student) => {
-      const matchBranch = student.branch === currentBranch
-      const matchSearch =
-        !currentSearch ||
-        student.name?.includes(currentSearch) ||
-        String(student.grade || '').includes(currentSearch)
+    return enrichedStudents
+      .filter((student) => {
+        const matchBranch = student.branch === currentBranch
+        const matchSearch =
+          !currentSearch ||
+          student.name?.includes(currentSearch) ||
+          String(student.grade || '').includes(currentSearch)
 
-      const matchFilter =
-        currentFilter === 'all' ||
-        (currentFilter === 'warn' &&
-          (student.status === 'warn' || student.status === 'danger')) ||
-        (currentFilter === 'todayPending' && student.pendingConfirmState === 'today') ||
-        (currentFilter === 'overduePending' && student.pendingConfirmState === 'overdue')
+        const matchFilter =
+          currentFilter === 'all' ||
+          (currentFilter === 'warn' &&
+            (student.status === 'warn' || student.status === 'danger')) ||
+          (currentFilter === 'todayPending' && student.pendingConfirmState === 'today') ||
+          (currentFilter === 'overduePending' && student.pendingConfirmState === 'overdue')
 
-      return matchBranch && matchSearch && matchFilter
-    })
+        return matchBranch && matchSearch && matchFilter
+      })
+      .sort((a, b) => {
+        const an = String(a.name || '').trim()
+        const bn = String(b.name || '').trim()
+        return an.localeCompare(bn, 'zh-Hant-u-co-stroke', {
+          numeric: true,
+          sensitivity: 'base',
+        })
+      })
   }, [enrichedStudents, currentBranch, currentSearch, currentFilter])
 
   const selectedStudent = useMemo(() => {

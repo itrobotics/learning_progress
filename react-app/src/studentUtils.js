@@ -1,5 +1,5 @@
 import { TODAY } from './constants'
-import { buildBookProgressMap } from './bookUtils'
+import { buildBookProgressMap, formatBookTokenLabel, parseBookToken, validateMPMBook } from './bookUtils'
 import { dateStrToISO } from './dateUtils'
 
 export function getCurrentRemainingHours(student) {
@@ -78,17 +78,41 @@ export function getNextPendingRow(student) {
 }
 
 export function getCurrentBook(student) {
-  const confirmed = (student?.scheduleTable || []).filter(
-    (row) => isConfirmedProgressStatus(row.status) && row.books && row.books.length
-  )
+  const confirmed = (student?.scheduleTable || [])
+    .filter((row) => isConfirmedProgressStatus(row.status) && Array.isArray(row.books) && row.books.length)
+    .sort((a, b) => {
+      const ad = dateStrToISO(a.date)
+      const bd = dateStrToISO(b.date)
+      if (ad !== bd) return ad > bd ? 1 : -1
+      const ac = dateStrToISO(a.confirmedAt || '')
+      const bc = dateStrToISO(b.confirmedAt || '')
+      if (ac !== bc) return ac > bc ? 1 : -1
+      return 0
+    })
 
-  if (!confirmed.length) {
-    return `${student.level}${student.grade}${String(student.confirmedNo).padStart(2, '0')}`
+  for (let rowIdx = confirmed.length - 1; rowIdx >= 0; rowIdx -= 1) {
+    const row = confirmed[rowIdx]
+    const books = row.books || []
+
+    for (let i = books.length - 1; i >= 0; i -= 1) {
+      const normalized = formatBookTokenLabel(books[i])
+      if (!normalized) continue
+      if (parseBookToken(normalized)) return normalized
+    }
   }
 
-  confirmed.sort((a, b) => (dateStrToISO(a.date) > dateStrToISO(b.date) ? 1 : -1))
-  const last = confirmed[confirmed.length - 1]
-  return last.books[last.books.length - 1]
+  const level = String(student?.level || '')
+    .trim()
+    .toUpperCase()
+  const grade = Number(student?.grade)
+  const confirmedNo = Math.floor(Number(student?.confirmedNo || 0))
+
+  if (/^(GK|GV|GA)$/.test(level) && Number.isFinite(grade) && Number.isFinite(confirmedNo) && confirmedNo > 0) {
+    const fallback = `${level}${grade}${String(confirmedNo).padStart(2, '0')}`
+    if (validateMPMBook(fallback).valid) return fallback
+  }
+
+  return '—'
 }
 
 export function getDepletionDate(student) {

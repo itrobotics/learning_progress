@@ -105,6 +105,12 @@ function StudentDetailPanel({
     return selectedStudent ? getNextPendingRow(selectedStudent) : null
   }, [selectedStudent])
 
+  const nextPendingBookText = useMemo(() => {
+    const books = (nextPendingRow?.books || []).filter(Boolean)
+    if (!books.length) return '無'
+    return books.join('、')
+  }, [nextPendingRow])
+
   useEffect(() => {
     setSchedulePage(1)
     setAdjustHours('')
@@ -411,8 +417,12 @@ function StudentDetailPanel({
 
       <div className="info-grid info-grid-extended">
         <div className="info-cell">
-          <div className="ic-label">目前使用書號</div>
+          <div className="ic-label">最新已確認書號</div>
           <div className="ic-value">{getCurrentBook(selectedStudent)}</div>
+        </div>
+        <div className="info-cell">
+          <div className="ic-label">今日待確認書號（預計）</div>
+          <div className="ic-value small">{nextPendingBookText}</div>
         </div>
         <div className="info-cell">
           <div className="ic-label">剩餘學習時數</div>
