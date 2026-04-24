@@ -53,6 +53,56 @@ export function normalizeSheetDate(d) {
   return toTWDateTimeString(d)
 }
 
+export function parseTwDateTimeToDate(input) {
+  if (input === null || input === undefined) return null
+
+  if (input instanceof Date) {
+    return Number.isNaN(input.getTime()) ? null : input
+  }
+
+  const raw = String(input).trim()
+  if (!raw) return null
+
+  // 支援：yyyy/M/d 上午|下午 h:mm:ss
+  const meridiem = raw.match(
+    /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})\s*(上午|下午)\s*(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/
+  )
+  if (meridiem) {
+    const y = Number(meridiem[1])
+    const mo = Number(meridiem[2])
+    const dd = Number(meridiem[3])
+    const ap = meridiem[4]
+    let hh = Number(meridiem[5])
+    const mm = Number(meridiem[6])
+    const ss = Number(meridiem[7] || 0)
+
+    if (ap === '下午' && hh < 12) hh += 12
+    if (ap === '上午' && hh === 12) hh = 0
+
+    const d = new Date(y, mo - 1, dd, hh, mm, ss)
+    return Number.isNaN(d.getTime()) ? null : d
+  }
+
+  // 支援：yyyy-M-d HH:mm:ss / yyyy/M/d HH:mm:ss / yyyy-MM-dd
+  const normalized = raw.replace(/\//g, '-')
+  const plain = normalized.match(
+    /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/
+  )
+  if (plain) {
+    const y = Number(plain[1])
+    const mo = Number(plain[2])
+    const dd = Number(plain[3])
+    const hh = Number(plain[4] || 0)
+    const mm = Number(plain[5] || 0)
+    const ss = Number(plain[6] || 0)
+    const d = new Date(y, mo - 1, dd, hh, mm, ss)
+    return Number.isNaN(d.getTime()) ? null : d
+  }
+
+  const fallback = new Date(raw)
+  return Number.isNaN(fallback.getTime()) ? null : fallback
+}
+
 export function formatDateTimeForUI(d) {
   if (!d) return '—'
   return normalizeSheetDate(d).replace(/-/g, '/')

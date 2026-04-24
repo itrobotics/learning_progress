@@ -1,4 +1,4 @@
-const SHEET_ID = '14Yz06z4e8g3DxiRb7Bh8hnY6GSjs6Ghni1pB98exYVk';
+const SHEET_ID = '1tpqECd9DbeRB8f_a_BuRv6SjXZzHpQY7WI7v3K9VJWo';
 const TZ = 'Asia/Taipei';
 
 const DEFAULT_SETTINGS = {
@@ -454,17 +454,58 @@ function parseDateSafe_(v) {
   const s = String(v).trim();
   if (!s) return null;
 
-  // 支援 yyyy-M-d / yyyy/M/d / yyyy-MM-dd
+  // 支援民間常見格式：yyyy/M/d 上午/下午 h:mm:ss
+  // 例：2026/4/23 下午 6:33:49
+  const meridiemMatch = s.match(
+    /^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})\s*(上午|下午)\s*(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?$/
+  );
+  if (meridiemMatch) {
+    const y = Number(meridiemMatch[1]);
+    const mo = Number(meridiemMatch[2]);
+    const d = Number(meridiemMatch[3]);
+    const ap = meridiemMatch[4];
+    let hh = Number(meridiemMatch[5]);
+    const mm = Number(meridiemMatch[6]);
+    const ss = Number(meridiemMatch[7] || 0);
+
+    if (ap === '下午' && hh < 12) hh += 12;
+    if (ap === '上午' && hh === 12) hh = 0;
+
+    try {
+      const parsed = Utilities.parseDate(
+        `${String(y).padStart(4, '0')}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')} ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`,
+        TZ,
+        'yyyy-MM-dd HH:mm:ss'
+      );
+      return isNaN(parsed.getTime()) ? null : parsed;
+    } catch (e) {
+      const parsed = new Date(y, mo - 1, d, hh, mm, ss);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    }
+  }
+
+  // 支援 yyyy-M-d / yyyy/M/d / yyyy-MM-dd，並強制以 Asia/Taipei 解析
+  // 避免 script TZ 與 Asia/Taipei 不一致時，new Date(y,mo,d,h,m,s) 產生 epoch 偏移
   const m = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
   if (m) {
-    const y = Number(m[1]);
-    const mo = Number(m[2]) - 1;
-    const d = Number(m[3]);
-    const hh = Number(m[4] || 0);
-    const mm = Number(m[5] || 0);
-    const ss = Number(m[6] || 0);
-    const parsed = new Date(y, mo, d, hh, mm, ss);
-    return isNaN(parsed.getTime()) ? null : parsed;
+    const y = m[1];
+    const mo = String(Number(m[2])).padStart(2, '0');
+    const d = String(Number(m[3])).padStart(2, '0');
+    const hh = String(Number(m[4] || 0)).padStart(2, '0');
+    const mm = String(Number(m[5] || 0)).padStart(2, '0');
+    const ss = String(Number(m[6] || 0)).padStart(2, '0');
+    try {
+      const parsed = Utilities.parseDate(
+        `${y}-${mo}-${d} ${hh}:${mm}:${ss}`,
+        TZ,
+        'yyyy-MM-dd HH:mm:ss'
+      );
+      return isNaN(parsed.getTime()) ? null : parsed;
+    } catch (e) {
+      // fallback：若 parseDate 失敗，回退舊邏輯
+      const parsed = new Date(Number(y), Number(m[2]) - 1, Number(d), Number(hh), Number(mm), Number(ss));
+      return isNaN(parsed.getTime()) ? null : parsed;
+    }
   }
 
   try {
@@ -509,6 +550,22 @@ function fmtDateTime(v) {
   return s;
 }
 
+function fmtDateTimeLegacyTW_(v) {
+  const d = parseDateSafe_(v);
+  if (!d) return '';
+
+  const y = Utilities.formatDate(d, TZ, 'yyyy');
+  const mo = String(Number(Utilities.formatDate(d, TZ, 'M')));
+  const day = String(Number(Utilities.formatDate(d, TZ, 'd')));
+  const hour24 = Number(Utilities.formatDate(d, TZ, 'H'));
+  const mm = Utilities.formatDate(d, TZ, 'mm');
+  const ss = Utilities.formatDate(d, TZ, 'ss');
+  const ap = hour24 >= 12 ? '下午' : '上午';
+  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+
+  return `${y}/${mo}/${day} ${ap} ${hour12}:${mm}:${ss}`;
+}
+
 function corsResponse(data) {
   const output = ContentService.createTextOutput(JSON.stringify(data));
   output.setMimeType(ContentService.MimeType.JSON);
@@ -544,6 +601,7 @@ function doPost(e) {
     const action = data.action;
     if (action === 'saveSchedule') return corsResponse(saveSchedule(data));
     if (action === 'confirmProgress') return corsResponse(confirmProgress(data));
+    if (action === 'undoConfirmProgress') return corsResponse(undoConfirmProgress(data));
     if (action === 'adjustStudentHours') return corsResponse(adjustStudentHours(data));
     if (action === 'saveBookOrderStates') return corsResponse(saveBookOrderStates(data));
     if (action === 'addStudent') return corsResponse(addStudent(data));
@@ -554,6 +612,118 @@ function doPost(e) {
     return corsResponse({error: 'unknown action: ' + action});
   } catch(err) {
     return corsResponse({error: err.message});
+  }
+}
+
+function undoConfirmProgress(data) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const studentId = String(data.studentId || '').trim();
+    const rowId = String(data.rowId || '').trim();
+    const operator = String(data.operator || '').trim() || 'system';
+    if (!studentId) return {error: 'studentId required'};
+    if (!rowId) return {error: 'rowId required'};
+
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const scheduleSh = ensureScheduleColumns_(ss) || ss.getSheetByName('學習進度表');
+    const rows = scheduleSh.getDataRange().getValues();
+    const headers = rows[0] || [];
+
+    const sidIdx = headers.indexOf('studentId');
+    const rowIdIdx = headers.indexOf('rowId');
+    const statusIdx = headers.indexOf('status');
+    const confirmedAtIdx = headers.indexOf('confirmedAt');
+    const hoursIdx = headers.indexOf('hours');
+
+    if (sidIdx < 0 || rowIdIdx < 0 || statusIdx < 0 || confirmedAtIdx < 0 || hoursIdx < 0) {
+      return {error: '學習進度表缺少必要欄位'};
+    }
+
+    let targetRow = -1;
+    for (let i = 1; i < rows.length; i++) {
+      const sid = String(rows[i][sidIdx] || '').trim();
+      const rid = String(rows[i][rowIdIdx] || '').trim();
+      if (sid === studentId && rid === rowId) {
+        targetRow = i + 1;
+        break;
+      }
+    }
+    if (targetRow < 0) return {error: '找不到要還原的進度列'};
+
+    const row = rows[targetRow - 1];
+    const rowStatus = normalizeProgressStatus_(row[statusIdx]);
+    const isConfirmed = rowStatus === 'match' || rowStatus === 'behind' || rowStatus === 'ahead';
+    if (!isConfirmed) return {error: '該列不是已確認狀態，無法還原'};
+
+    const rowHours = Number(row[hoursIdx] || 0);
+    if (!Number.isFinite(rowHours) || rowHours < 0) {
+      return {error: '該列時數不合法，無法還原'};
+    }
+
+    const studentSh = ss.getSheetByName('學生設定');
+    const sRows = studentSh.getDataRange().getValues();
+    const sHeaders = sRows[0] || [];
+    const sSidIdx = sHeaders.indexOf('id');
+    const sNameIdx = sHeaders.indexOf('name');
+    const curHrIdx = sHeaders.indexOf('currentRemainingHours');
+    const cHrIdx = sHeaders.indexOf('confirmedHours');
+    const initHrIdx = sHeaders.indexOf('initHours');
+    if (sSidIdx < 0) return {error: '學生設定缺少 id 欄位'};
+
+    let studentRow = -1;
+    for (let i = 1; i < sRows.length; i++) {
+      if (String(sRows[i][sSidIdx] || '').trim() === studentId) {
+        studentRow = i + 1;
+        break;
+      }
+    }
+    if (studentRow < 0) return {error: '找不到學生資料'};
+
+    const sCurrent = sRows[studentRow - 1];
+    const beforeHours = Number(
+      (curHrIdx >= 0 ? sCurrent[curHrIdx] : (cHrIdx >= 0 ? sCurrent[cHrIdx] : 0)) || 0
+    );
+    const beforeInitHours = Number((initHrIdx >= 0 ? sCurrent[initHrIdx] : beforeHours) || 0);
+    const afterHours = beforeHours + rowHours;
+
+    // 還原該進度列
+    scheduleSh.getRange(targetRow, statusIdx + 1).setValue('pending');
+    scheduleSh.getRange(targetRow, confirmedAtIdx + 1).clearContent();
+
+    // 回補學生剩餘時數（initHours 不變）
+    if (curHrIdx >= 0) studentSh.getRange(studentRow, curHrIdx + 1).setValue(afterHours);
+    if (cHrIdx >= 0) studentSh.getRange(studentRow, cHrIdx + 1).setValue(afterHours);
+
+    // 記錄時數異動紀錄
+    const logSh = ensureHoursLogSheet_(ss);
+    const studentName = sNameIdx >= 0 ? sCurrent[sNameIdx] : '';
+    logSh.appendRow([
+      fmtDateTime(new Date()),
+      studentId,
+      studentName,
+      'undo_confirm',
+      rowHours,
+      beforeHours,
+      afterHours,
+      beforeInitHours,
+      beforeInitHours,
+      operator,
+      `undo rowId=${rowId}`
+    ]);
+
+    SpreadsheetApp.flush();
+    return {
+      success: true,
+      studentId,
+      rowId,
+      newStatus: 'pending',
+      restoredHours: rowHours,
+      beforeHours,
+      afterHours
+    };
+  } finally {
+    lock.releaseLock();
   }
 }
 
@@ -709,7 +879,8 @@ function confirmProgress(data) {
 
     const booksStr = Array.isArray(data.books) ? data.books.join(',') : data.books;
     const dateValue = fmtDateOnly(data.date);
-    const confirmedAtValue = data.confirmedAt ? fmtDateTime(data.confirmedAt) : fmtDateTime(new Date());
+    // confirmedAt 一律以既有格式寫入：yyyy/M/d 上午/下午 h:mm:ss（與歷史資料一致）
+    const confirmedAtValue = fmtDateTimeLegacyTW_(new Date());
     const normalizedStatus = normalizeProgressStatus_(data.status);
 
     if (targetRow < 0) {
@@ -717,11 +888,23 @@ function confirmProgress(data) {
         data.studentId, dateValue, data.hours, booksStr,
         normalizedStatus, data.note || '', confirmedAtValue, generateRowId_()
       ]);
+
+      // 強制 confirmedAt 欄位為文字，避免 Spreadsheet 自動轉為日期格式顯示
+      const appendedRow = sh.getLastRow();
+      if (confirmedAtCol >= 0 && appendedRow > 1) {
+        const confirmedCell = sh.getRange(appendedRow, confirmedAtCol + 1);
+        confirmedCell.setNumberFormat('@');
+        confirmedCell.setValue(confirmedAtValue);
+      }
     } else {
       sh.getRange(targetRow, dateCol + 1).setValue(dateValue);
       sh.getRange(targetRow, statusCol + 1).setValue(normalizedStatus);
       sh.getRange(targetRow, noteCol + 1).setValue(data.note || '');
-      sh.getRange(targetRow, confirmedAtCol + 1).setValue(confirmedAtValue);
+      if (confirmedAtCol >= 0) {
+        const confirmedCell = sh.getRange(targetRow, confirmedAtCol + 1);
+        confirmedCell.setNumberFormat('@');
+        confirmedCell.setValue(confirmedAtValue);
+      }
       sh.getRange(targetRow, hoursCol + 1).setValue(data.hours);
       sh.getRange(targetRow, booksCol + 1).setValue(booksStr);
     }

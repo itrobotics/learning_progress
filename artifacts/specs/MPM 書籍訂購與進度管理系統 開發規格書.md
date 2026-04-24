@@ -799,6 +799,20 @@ App 啟動時：
 3. 更新學生 `confirmedNo`
 4. 更新學生 `currentRemainingHours / confirmedHours`
 
+### 6.5.1 還原成未確認（undoConfirmProgress）
+為避免誤填時數或狀態，系統提供「還原成未確認」功能。
+
+規則：
+
+1. 僅允許 `match / behind / ahead` 列還原成 `pending`
+2. 僅允許最近 7 天內（以 `confirmedAt` 計算）執行還原
+3. 還原時：
+   - `status -> pending`
+   - `confirmedAt -> 空`
+   - 該列 `hours` 加回學生 `currentRemainingHours / confirmedHours`
+4. 還原不回滾 `book_order_state` 的 `inStock`（庫存狀態視為獨立管理）
+5. 還原操作需寫入時數異動紀錄（type: `undo_confirm`）
+
 ### 6.6 saveBookOrderStates 規則
 對每筆 `{ studentId, bookCode, state }`：
 

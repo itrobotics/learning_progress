@@ -15,6 +15,7 @@ import {
   fetchBookOrderStates,
   fetchSchedule,
   confirmProgress,
+  undoConfirmProgress,
   adjustStudentHours,
   saveBookOrderStates,
   saveSchedule,
@@ -839,6 +840,91 @@ function App() {
     }
   }
 
+  async function handleUndoConfirmRow(payload) {
+    const student = students.find((item) => item.id === payload.studentId)
+    if (!student) return { ok: false, message: '找不到學生資料' }
+
+    const targetIndex = (student.scheduleTable || []).findIndex((row) => row.rowId === payload.rowId)
+    if (targetIndex < 0) return { ok: false, message: '找不到要還原的進度列' }
+
+    const existingRow = student.scheduleTable[targetIndex]
+    const isConfirmed =
+      existingRow.status === 'match' || existingRow.status === 'behind' || existingRow.status === 'ahead'
+    if (!isConfirmed) return { ok: false, message: '該列不是已確認狀態，無法還原' }
+
+    try {
+      const result = await undoConfirmProgress({
+        studentId: payload.studentId,
+        rowId: payload.rowId,
+        operator: '主任',
+      })
+
+      if (String(result?.newStatus || '') !== 'pending') {
+        return { ok: false, message: '後端未回傳 pending 狀態，請稍後重試' }
+      }
+
+      const fallbackHours =
+        Number(student.currentRemainingHours ?? student.confirmedHours ?? 0) + Number(existingRow.hours || 0)
+      const restoredHours = Number(result?.afterHours)
+      const nextRemainingHours = Number.isFinite(restoredHours) ? restoredHours : fallbackHours
+
+      setStudents((prev) =>
+        prev.map((item) => {
+          if (item.id !== payload.studentId) return item
+          const scheduleTable = [...(item.scheduleTable || [])]
+          const oldRow = scheduleTable[targetIndex]
+          if (!oldRow) return item
+
+          scheduleTable[targetIndex] = {
+            ...oldRow,
+            status: 'pending',
+            confirmedAt: '',
+          }
+
+          return {
+            ...item,
+            scheduleTable,
+            currentRemainingHours: nextRemainingHours,
+            confirmedHours: nextRemainingHours,
+            status: calcStudentStatus(
+              {
+                ...item,
+                currentRemainingHours: nextRemainingHours,
+              },
+              settings
+            ),
+          }
+        })
+      )
+
+      // 以後端資料為準再拉一次，避免前端快取顯示與 Sheet 不一致
+      try {
+        const { startDate, endDate } = getScheduleLoadWindow(settings)
+        const scheduleRes = await fetchSchedule(payload.studentId, startDate, endDate)
+        const refreshedScheduleTable = normalizeScheduleRows(scheduleRes?.rows || [])
+        setStudents((prev) =>
+          prev.map((item) =>
+            item.id === payload.studentId
+              ? {
+                  ...item,
+                  scheduleTable: refreshedScheduleTable,
+                  scheduleLoaded: true,
+                  loadedScheduleStartDate: startDate,
+                  loadedScheduleEndDate: endDate,
+                }
+              : item
+          )
+        )
+      } catch (reloadError) {
+        setErrorMsg(reloadError.message || '還原後重新載入進度表失敗')
+      }
+
+      return { ok: true, message: `已還原為 pending，並回補 ${Number(existingRow.hours || 0)} 小時` }
+    } catch (error) {
+      return { ok: false, message: error.message || '還原失敗' }
+    }
+  }
+
   function handleRefresh() {
     setRefreshKey((prev) => prev + 1)
   }
@@ -1430,6 +1516,7 @@ function App() {
                 onOpenSimulation={handleOpenSimulation}
                 onOpenStudentManage={handleOpenEditStudent}
                 onConfirmRow={handleConfirmRow}
+                onUndoConfirmRow={handleUndoConfirmRow}
                 onAdjustHours={handleAdjustHours}
                 scheduleLoading={!!selectedStudent?.scheduleLoading}
                 onRefreshPanelData={handleRefreshStudentData}

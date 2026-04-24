@@ -101,6 +101,13 @@ export async function confirmProgress(payload) {
   })
 }
 
+export async function undoConfirmProgress(payload) {
+  return apiPost({
+    action: 'undoConfirmProgress',
+    ...payload,
+  })
+}
+
 export async function adjustStudentHours(payload) {
   return apiPost({
     action: 'adjustStudentHours',

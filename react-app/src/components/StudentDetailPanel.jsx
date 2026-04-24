@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { formatDateForUI, formatDateTimeForUI, getDowZh } from '../dateUtils'
+import { formatDateForUI, formatDateTimeForUI, getDowZh, parseTwDateTimeToDate } from '../dateUtils'
 import LearningMatrix from './LearningMatrix'
 import {
   calcRealRemainingHours,
@@ -57,6 +57,7 @@ function StudentDetailPanel({
   onOpenSimulation,
   onOpenStudentManage,
   onConfirmRow,
+  onUndoConfirmRow,
   onAdjustHours,
   scheduleLoading,
   onRefreshPanelData,
@@ -72,6 +73,8 @@ function StudentDetailPanel({
   const [adjustHours, setAdjustHours] = useState('')
   const [adjustNote, setAdjustNote] = useState('')
   const [adjustMsg, setAdjustMsg] = useState('')
+  const [undoMsg, setUndoMsg] = useState('')
+  const [actionLocked, setActionLocked] = useState(false)
   const [expandedScheduleRowKey, setExpandedScheduleRowKey] = useState('')
 
   const pageSize = Number(settings?.rowPerPage || 25)
@@ -106,8 +109,20 @@ function StudentDetailPanel({
     setAdjustHours('')
     setAdjustNote('')
     setAdjustMsg('')
+    setUndoMsg('')
+    setActionLocked(false)
     setExpandedScheduleRowKey('')
   }, [selectedStudent?.id])
+
+  const nextPendingSyncKey = useMemo(() => {
+    if (!nextPendingRow) return ''
+    return JSON.stringify({
+      rowId: nextPendingRow.rowId || '',
+      books: nextPendingRow.books || [],
+      hours: Number(nextPendingRow.hours ?? 0),
+      note: String(nextPendingRow.note || ''),
+    })
+  }, [nextPendingRow])
 
   useEffect(() => {
     if (!nextPendingRow) {
@@ -120,11 +135,11 @@ function StudentDetailPanel({
     }
 
     setConfirmStatus('')
-    setConfirmNote('')
+    setConfirmNote(String(nextPendingRow.note || ''))
     setConfirmBooks((nextPendingRow.books || []).join(', '))
     setConfirmHours(String(nextPendingRow.hours ?? ''))
     setConfirmError('')
-  }, [nextPendingRow?.rowId])
+  }, [nextPendingSyncKey])
 
   const totalPages = Math.max(1, Math.ceil(orderedScheduleRows.length / pageSize))
   const currentPage = Math.min(totalPages, Math.max(1, schedulePage))
@@ -172,6 +187,7 @@ function StudentDetailPanel({
   const showScheduleLoading = !!scheduleLoading || !hasScheduleLoaded
 
   async function handleConfirmSubmit() {
+    if (actionLocked) return
     if (!nextPendingRow) return
 
     const books = confirmBooks
@@ -235,6 +251,7 @@ function StudentDetailPanel({
   }
 
   async function handleAdjustHours() {
+    if (actionLocked) return
     const deltaHours = Number(adjustHours)
     if (!Number.isInteger(deltaHours) || deltaHours <= 0) {
       setAdjustMsg('⚠ 請輸入大於 0 的整數時數')
@@ -258,6 +275,55 @@ function StudentDetailPanel({
     }
 
     setAdjustMsg(`⚠ ${result?.message || '調整失敗'}`)
+  }
+
+  function getUndoMeta(row) {
+    const rowId = String(row?.rowId || '').trim()
+    if (!rowId) return { show: false, allowed: false, reason: '此列缺少 rowId，無法還原' }
+
+    const status = normalizeProgressStatus(row?.status)
+    const isConfirmed = status === 'match' || status === 'behind' || status === 'ahead'
+    if (!isConfirmed) return { show: false, allowed: false, reason: '' }
+
+    const raw = String(row?.confirmedAt || '').trim()
+    if (!raw) return { show: true, allowed: false, reason: '缺少確認時間' }
+
+    const parsed = parseTwDateTimeToDate(raw)
+    if (parsed && !Number.isFinite(parsed.getTime())) {
+      return { show: true, allowed: false, reason: '確認時間格式異常' }
+    }
+
+    return { show: true, allowed: true, reason: '' }
+  }
+
+  async function handleUndoConfirm(row) {
+    if (actionLocked) return
+    const meta = getUndoMeta(row)
+    if (!meta.allowed) {
+      setUndoMsg(`⚠ ${meta.reason || '此列無法還原'}`)
+      return
+    }
+    if (!onUndoConfirmRow) return
+
+    const ok = window.confirm('確定要還原成未確認嗎？\n此操作會把該列時數加回剩餘時數。')
+    if (!ok) return
+
+    setActionLocked(true)
+    try {
+      setUndoMsg('⏳ 還原中，請稍候…')
+      const result = await onUndoConfirmRow({
+        studentId: selectedStudent.id,
+        rowId: row.rowId,
+      })
+
+      if (result?.ok) {
+        setUndoMsg(`✅ ${result?.message || '已還原為未確認'}`)
+        return
+      }
+      setUndoMsg(`⚠ ${result?.message || '還原失敗'}`)
+    } finally {
+      setActionLocked(false)
+    }
   }
 
   return (
@@ -370,7 +436,7 @@ function StudentDetailPanel({
           value={adjustNote}
           onChange={(e) => setAdjustNote(e.target.value)}
         />
-        <button className="btn btn-outline btn-sm" onClick={handleAdjustHours}>
+        <button className="btn btn-outline btn-sm" disabled={actionLocked} onClick={handleAdjustHours}>
           調整時數
         </button>
         <span className="inline-msg">{adjustMsg}</span>
@@ -496,7 +562,7 @@ function StudentDetailPanel({
               {confirmError ? <div className="form-error">{confirmError}</div> : null}
 
               <div className="confirm-action-row">
-                <button className="btn btn-success" onClick={handleConfirmSubmit}>
+                <button className="btn btn-success" disabled={actionLocked} onClick={handleConfirmSubmit}>
                   ✅ 確認
                 </button>
               </div>
@@ -517,21 +583,21 @@ function StudentDetailPanel({
           <div className="pager-row">
             <button
               className="btn btn-outline btn-sm"
-              disabled={!!panelRefreshing}
+              disabled={!!panelRefreshing || actionLocked}
               onClick={() => onRefreshPanelData?.(selectedStudent.id)}
             >
               {panelRefreshing ? '更新中…' : '更新'}
             </button>
             <button
               className="btn btn-outline btn-sm"
-              disabled={currentPage <= 1}
+              disabled={actionLocked || currentPage <= 1}
               onClick={() => setSchedulePage((prev) => Math.max(1, prev - 1))}
             >
               上一頁
             </button>
             <button
               className="btn btn-outline btn-sm"
-              disabled={currentPage >= totalPages}
+              disabled={actionLocked || currentPage >= totalPages}
               onClick={() => setSchedulePage((prev) => Math.min(totalPages, prev + 1))}
             >
               下一頁
@@ -540,6 +606,7 @@ function StudentDetailPanel({
         </div>
 
         {panelRefreshMsg ? <div className="section-sub">{panelRefreshMsg}</div> : null}
+        {undoMsg ? <div className="section-sub">{undoMsg}</div> : null}
 
         {showScheduleLoading ? (
           <div className="empty-block">
@@ -614,6 +681,22 @@ function StudentDetailPanel({
                             {formatDateTimeForUI(row.confirmedAt)}
                           </div>
                         </div>
+
+                        {getUndoMeta(row).show ? (
+                          <div className="schedule-mobile-field">
+                            <div className="schedule-mobile-field-label">操作</div>
+                            <div className="schedule-mobile-field-value">
+                              <button
+                                className="btn btn-outline btn-sm"
+                                disabled={actionLocked || !getUndoMeta(row).allowed}
+                                title={getUndoMeta(row).reason || ''}
+                                onClick={() => handleUndoConfirm(row)}
+                              >
+                                還原成未確認
+                              </button>
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>
@@ -632,6 +715,7 @@ function StudentDetailPanel({
                     <th>學習狀態</th>
                     <th>備註</th>
                     <th>確認時間</th>
+                    <th>操作</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -670,6 +754,20 @@ function StudentDetailPanel({
                         </td>
                         <td>{row.note || '—'}</td>
                         <td>{formatDateTimeForUI(row.confirmedAt)}</td>
+                        <td>
+                          {getUndoMeta(row).show ? (
+                            <button
+                              className="btn btn-outline btn-sm"
+                              disabled={actionLocked || !getUndoMeta(row).allowed}
+                              title={getUndoMeta(row).reason || ''}
+                              onClick={() => handleUndoConfirm(row)}
+                            >
+                              還原
+                            </button>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
                       </tr>
                     )
                   })}
