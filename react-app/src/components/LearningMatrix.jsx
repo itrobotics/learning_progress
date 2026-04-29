@@ -295,7 +295,7 @@ function LearningMatrix({
                               : `${book}：半本已完成${isBehindConfirmed ? '（落後進度）' : ''}`
                           }
                         >
-                          {isBookProgressComplete(learnedInfo) ? 'X' : '◐'}
+                          {isBookProgressComplete(learnedInfo) ? '𒊹' : '◐'}
                         </td>
                     )
                   }

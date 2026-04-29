@@ -301,6 +301,7 @@ function StudentManageModal({
               >
                 <option value="0.5">0.5 本/時</option>
                 <option value="1">1 本/時</option>
+                <option value="2">2 本/時</option>
               </select>
             </div>
           </div>
