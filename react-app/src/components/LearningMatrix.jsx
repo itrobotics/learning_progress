@@ -202,7 +202,7 @@ function LearningMatrix({
         <div>
           <div className="section-title">🧭 書號學習矩陣</div>
           <div className="section-sub">
-            綠底 X＝整本已完成 ◐＝半本已完成 ○＝已排入學習進度但尚未確認 黃底 ○＝有庫存
+            綠底𒊹＝整本已完成 ◐＝半本已完成 ○＝已排入學習進度但尚未確認 黃底 ○＝有庫存
             紅底 ○＝無庫存 顯示範圍：{scopeLabel}
           </div>
         </div>
